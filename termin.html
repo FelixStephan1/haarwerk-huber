@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ihr Termin – Haarwerk Huber</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="notice">Übungsprojekt – dieser Friseursalon ist erfunden.</div>
+
+  <header class="small-header">
+    <h1><a href="/">Haarwerk Huber</a></h1>
+    <p>Ihr Termin</p>
+  </header>
+
+  <main>
+    <section>
+      <p id="loading">Termin wird geladen …</p>
+
+      <div id="booking" class="hidden">
+        <h2>Hallo <span id="b-name"></span></h2>
+        <table class="details">
+          <tr><td>Leistung</td><td id="b-service"></td></tr>
+          <tr><td>Datum</td><td id="b-date"></td></tr>
+          <tr><td>Uhrzeit</td><td id="b-time"></td></tr>
+          <tr><td>Status</td><td><span id="b-status" class="badge"></span></td></tr>
+        </table>
+
+        <div id="actions" class="actions">
+          <button type="button" class="button" id="show-move">Termin verschieben</button>
+          <button type="button" class="button secondary" id="cancel">Termin stornieren</button>
+        </div>
+        <p id="reason" class="small hidden"></p>
+
+        <form id="move-form" class="hidden">
+          <h2>Neuer Termin</h2>
+          <div class="row">
+            <label>Datum
+              <input type="date" name="date" required>
+            </label>
+            <label>Uhrzeit
+              <select name="time" required></select>
+            </label>
+          </div>
+          <div class="actions">
+            <button type="submit" class="button">Verschieben bestätigen</button>
+            <button type="button" class="button secondary" id="hide-move">Abbrechen</button>
+          </div>
+        </form>
+      </div>
+
+      <p id="status" role="status"></p>
+      <p class="small"><a href="/">← Zur Startseite</a></p>
+    </section>
+  </main>
+
+  <footer>
+    © 2026 Haarwerk Huber · Impressum · Datenschutz
+  </footer>
+
+  <script src="shared.js"></script>
+  <script>
+    const token = new URLSearchParams(location.search).get('t') || '';
+    const $ = (id) => document.getElementById(id);
+    const status = $('status');
+    const moveForm = $('move-form');
+    let booking = null;
+
+    async function load() {
+      try {
+        const data = await callBooking('GET', { action: 'get', t: token });
+        $('loading').classList.add('hidden');
+        if (!data.ok) return showStatus(status, 'error', data.message);
+        booking = data.booking;
+        render();
+      } catch (err) {
+        $('loading').classList.add('hidden');
+        showStatus(status, 'error', 'Der Termin konnte nicht geladen werden. Bitte rufen Sie uns an: ' + PHONE);
+      }
+    }
+
+    function render() {
+      // textContent statt innerHTML: Namen usw. werden nie als HTML ausgeführt
+      $('b-name').textContent = booking.name;
+      $('b-service').textContent = `${booking.service} (ca. ${booking.duration} Min.)`;
+      $('b-date').textContent = booking.dateLong;
+      $('b-time').textContent = booking.timeRange;
+      $('b-status').textContent = booking.status;
+      $('b-status').classList.toggle('cancelled', booking.status === 'storniert');
+      $('actions').classList.toggle('hidden', !booking.canChange);
+      $('reason').classList.toggle('hidden', booking.canChange);
+      $('reason').textContent = booking.reason;
+      $('booking').classList.remove('hidden');
+    }
+
+    function setBusy(busy) {
+      document.querySelectorAll('button').forEach((b) => (b.disabled = busy));
+    }
+
+    // ── Stornieren ──
+    $('cancel').addEventListener('click', async () => {
+      if (!confirm(`Möchten Sie Ihren Termin am ${booking.dateLong} wirklich stornieren?`)) return;
+      setBusy(true);
+      showStatus(status, '', 'Wird storniert …');
+      try {
+        const data = await callBooking('POST', { action: 'cancel', t: token });
+        showStatus(status, data.ok ? 'ok' : 'error', data.message);
+        if (data.ok) { moveForm.classList.add('hidden'); await reload(); }
+      } catch (err) {
+        showStatus(status, 'error', 'Das hat leider nicht geklappt. Bitte rufen Sie uns an: ' + PHONE);
+      } finally {
+        setBusy(false);
+      }
+    });
+
+    // ── Verschieben ──
+    const dateInput = moveForm.elements.date;
+    const timeSelect = moveForm.elements.time;
+    dateInput.min = todayISO();
+    dateInput.addEventListener('change', () => fillTimes(timeSelect, dateInput.value, booking.duration));
+
+    $('show-move').addEventListener('click', () => {
+      dateInput.value = booking.date;
+      fillTimes(timeSelect, booking.date, booking.duration);
+      timeSelect.value = booking.time;
+      moveForm.classList.remove('hidden');
+      showStatus(status, '', '');
+    });
+    $('hide-move').addEventListener('click', () => moveForm.classList.add('hidden'));
+
+    moveForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (dateInput.value === booking.date && timeSelect.value === booking.time) {
+        return showStatus(status, 'error', 'Das ist Ihr bisheriger Termin. Bitte wählen Sie eine andere Zeit.');
+      }
+      setBusy(true);
+      showStatus(status, '', 'Wird verschoben …');
+      try {
+        const data = await callBooking('POST', { action: 'move', t: token, date: dateInput.value, time: timeSelect.value });
+        showStatus(status, data.ok ? 'ok' : 'error', data.message);
+        if (data.ok) { moveForm.classList.add('hidden'); await reload(); }
+      } catch (err) {
+        showStatus(status, 'error', 'Das hat leider nicht geklappt. Bitte rufen Sie uns an: ' + PHONE);
+      } finally {
+        setBusy(false);
+      }
+    });
+
+    // Termin neu laden, ohne die Erfolgsmeldung zu überschreiben
+    async function reload() {
+      const data = await callBooking('GET', { action: 'get', t: token });
+      if (data.ok) { booking = data.booking; render(); }
+    }
+
+    load();
+  </script>
+</body>
+</html>
