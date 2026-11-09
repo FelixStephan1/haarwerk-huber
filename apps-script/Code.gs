@@ -7,6 +7,13 @@
  *   POST cancel – Buchung stornieren (bis 24 h vorher)
  *   POST move   – Buchung verschieben (bis 24 h vorher)
  *
+ * Kalender-Sync (sync): Der Salon arbeitet nur im Google Kalender. Wird ein
+ * Termin dort verschoben oder gelöscht, gleicht sync() das Sheet an und
+ * informiert den Kunden. Läuft automatisch bei jeder Kalender-Änderung und
+ * zusätzlich jede Nacht (Trigger werden von setup() angelegt).
+ * Termine, die der Salon selbst einträgt (Pause, Urlaub, Telefonbuchung),
+ * stehen nicht im Sheet und werden ignoriert – blockieren aber Online-Buchungen.
+ *
  * Jede Buchung bekommt einen geheimen Token. Nur wer den Link aus der
  * Bestätigungs-E-Mail hat, kann die Buchung ändern.
  *
@@ -52,7 +59,17 @@ const COL = {
   received: 1, date: 2, time: 3, service: 4, duration: 5, name: 6,
   email: 7, phone: 8, message: 9, eventId: 10, token: 11, status: 12,
 };
-const STATUS = { booked: 'gebucht', moved: 'verschoben', cancelled: 'storniert' };
+const STATUS = {
+  booked: 'gebucht',
+  moved: 'verschoben',
+  cancelled: 'storniert',
+  salonMoved: 'verschoben (Salon)',
+  salonCancelled: 'storniert (Salon)',
+};
+const isCancelled = (status) => String(status).startsWith(STATUS.cancelled);
+
+// Bei Änderungen durch den Salon zusätzlich eine Kopie an den Inhaber (so fällt ein versehentliches Verschieben sofort auf)
+const OWNER_COPY_ON_SALON_CHANGES = true;
 
 
 // ───────────────────────── Einstieg ─────────────────────────
@@ -177,9 +194,88 @@ function move(p) {
 }
 
 
+// ───────────────────────── Kalender-Sync ─────────────────────────
+
+/**
+ * Vergleicht alle kommenden Buchungen im Sheet mit dem Kalender.
+ * Läuft per Trigger (Kalender geändert + jede Nacht). Sendet nur bei echten Unterschieden E-Mails,
+ * kann also beliebig oft laufen. Nutzt dieselbe Sperre wie Buchen/Verschieben/Stornieren,
+ * sieht also nie einen halb fertigen Zustand.
+ */
+function sync() {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(30000)) return; // gerade beschäftigt → der nächste Lauf holt es nach
+  const changes = [];
+  try {
+    const sh = sheet();
+    const last = sh.getLastRow();
+    if (last < 2) return;
+    const calendar = getCalendar();
+    const now = Date.now();
+    const rows = sh.getRange(2, 1, last - 1, COL.status).getDisplayValues();
+
+    rows.forEach((r, i) => {
+      const b = rowToBooking(r, i + 2);
+      if (!b.token || isCancelled(b.status)) return; // alte Zeilen ohne Token / schon storniert
+      if (b.start.getTime() <= now) return;          // Vergangenes nie anfassen
+
+      const event = findEvent(calendar, b.eventId);
+      if (!event) {
+        sh.getRange(b.row, COL.status).setValue(STATUS.salonCancelled);
+        changes.push({ b, kind: 'cancelled' });
+        return;
+      }
+
+      const start = event.getStartTime();
+      const end = event.getEndTime();
+      if (start.getTime() === b.start.getTime() && end.getTime() === b.end.getTime()) return; // alles gleich
+
+      const old = formatWhen(b.start);
+      b.date = Utilities.formatDate(start, TIMEZONE, 'yyyy-MM-dd');
+      b.time = Utilities.formatDate(start, TIMEZONE, 'HH:mm');
+      b.duration = Math.round((end - start) / 60000);
+      b.start = start;
+      b.end = end;
+      b.status = STATUS.salonMoved;
+      sh.getRange(b.row, COL.date, 1, 4).setValues([["'" + b.date, "'" + b.time, b.service, b.duration]]);
+      sh.getRange(b.row, COL.status).setValue(b.status);
+      changes.push({ b, kind: start.getTime() <= now ? 'movedToPast' : 'moved', old });
+    });
+  } finally {
+    lock.releaseLock();
+  }
+
+  // E-Mails erst nach dem Freigeben der Sperre (das Sheet ist zu diesem Zeitpunkt schon aktuell)
+  changes.forEach(({ b, kind, old }) => {
+    if (kind === 'cancelled') {
+      sendCancellation(b, true);
+      if (OWNER_COPY_ON_SALON_CHANGES) notifyOwner(b, 'Vom Salon ABGESAGT – Kunde wurde informiert');
+    } else if (kind === 'moved') {
+      sendConfirmation(b, 'salonMoved');
+      if (OWNER_COPY_ON_SALON_CHANGES) notifyOwner(b, `Vom Salon VERSCHOBEN (vorher ${old}) – Kunde wurde informiert`);
+    } else { // in die Vergangenheit verschoben: Kunde nicht anschreiben, nur Inhaber
+      notifyOwner(b, `In die Vergangenheit verschoben (vorher ${old}) – Kunde wurde NICHT informiert`);
+    }
+  });
+}
+
+/**
+ * Termin im Salon-Kalender suchen. Prüft zusätzlich über getEvents(), ob er wirklich
+ * noch im Kalender steht (gelöschte Termine kann getEventById manchmal noch liefern).
+ */
+function findEvent(calendar, eventId) {
+  if (!eventId) return null;
+  const event = calendar.getEventById(eventId);
+  if (!event) return null;
+  const stillThere = calendar.getEvents(event.getStartTime(), event.getEndTime())
+    .some((ev) => ev.getId() === eventId);
+  return stillThere ? event : null;
+}
+
+
 // ───────────────────────── Prüfungen ─────────────────────────
 
-const SLOT_TAKEN = 'Dieser Termin ist leider schon vergeben. Bitte wählen Sie eine andere Uhrzeit.';
+const SLOT_TAKEN = 'Zu dieser Zeit ist leider kein Termin frei. Bitte wählen Sie eine andere Uhrzeit.';
 
 /** Fehler, deren Text der Kunde sehen darf */
 function fail(msg) {
@@ -238,7 +334,7 @@ function isValidPhone(phone) {
 }
 
 function assertChangeable(b) {
-  if (b.status === STATUS.cancelled) fail('Dieser Termin wurde bereits storniert.');
+  if (isCancelled(b.status)) fail('Dieser Termin wurde bereits storniert.');
   if (b.start.getTime() < Date.now()) fail('Dieser Termin liegt in der Vergangenheit.');
   if (b.start.getTime() - Date.now() < CHANGE_DEADLINE_HOURS * 3600000) {
     fail(`Änderungen sind nur bis ${CHANGE_DEADLINE_HOURS} Stunden vor dem Termin online möglich. Bitte rufen Sie uns an: ${PHONE}`);
@@ -265,9 +361,13 @@ function findBooking(token) {
   const i = rows.findIndex((r) => r[COL.token - 1] === token);
   if (i === -1) fail('Diese Buchung wurde nicht gefunden.');
 
-  const r = rows[i];
+  return rowToBooking(rows[i], i + 2);
+}
+
+/** Eine Sheet-Zeile (Anzeigewerte) in ein Buchungs-Objekt umwandeln */
+function rowToBooking(r, row) {
   const b = {
-    row: i + 2,
+    row,
     date: r[COL.date - 1],
     time: r[COL.time - 1],
     service: r[COL.service - 1],
@@ -277,7 +377,7 @@ function findBooking(token) {
     phone: r[COL.phone - 1],
     message: r[COL.message - 1],
     eventId: r[COL.eventId - 1],
-    token,
+    token: r[COL.token - 1],
     status: r[COL.status - 1],
   };
   b.start = Utilities.parseDate(`${b.date} ${b.time}`, TIMEZONE, 'yyyy-MM-dd HH:mm');
@@ -329,14 +429,17 @@ function manageUrl(b) {
   return `${SITE_URL}/termin.html?t=${b.token}`;
 }
 
-/** kind: 'new' = neue Buchung, 'moved' = verschoben */
+/** kind: 'new' = neue Buchung, 'moved' = vom Kunden verschoben, 'salonMoved' = vom Salon verschoben */
 function sendConfirmation(b, kind) {
-  const moved = kind === 'moved';
+  const moved = kind === 'moved' || kind === 'salonMoved';
   const dateLong = formatDateLong(b.start);
   const timeRange = formatTimeRange(b);
-  const intro = moved
-    ? 'Ihr Termin wurde verschoben. Hier sind die neuen Termindaten:'
-    : 'vielen Dank für Ihre Buchung – wir freuen uns auf Sie!';
+  const intro = {
+    new: 'vielen Dank für Ihre Buchung – wir freuen uns auf Sie!',
+    moved: 'Ihr Termin wurde verschoben. Hier sind die neuen Termindaten:',
+    salonMoved: 'wir mussten Ihren Termin leider verschieben – bitte entschuldigen Sie. ' +
+      'Hier sind die neuen Termindaten. Passt Ihnen die neue Zeit nicht, können Sie sie unten ändern oder uns anrufen.',
+  }[kind];
 
   const plain =
 `Hallo ${b.name},
@@ -386,18 +489,22 @@ Ihr Team von ${SALON}
   });
 }
 
-function sendCancellation(b) {
+/** bySalon: true = der Salon hat den Termin im Kalender gelöscht */
+function sendCancellation(b, bySalon) {
+  const intro = bySalon
+    ? 'wir mussten Ihren Termin leider absagen – bitte entschuldigen Sie die Unannehmlichkeiten:'
+    : 'Ihr Termin wurde storniert:';
   const dateLong = formatDateLong(b.start);
   const timeRange = formatTimeRange(b);
   const plain =
 `Hallo ${b.name},
 
-Ihr Termin wurde storniert:
+${intro}
 
 Leistung: ${b.service}
 Termin:   ${dateLong}, ${timeRange}
 
-Sie möchten doch einen neuen Termin? Gerne: ${SITE_URL}/#termin
+Sie möchten einen neuen Termin? Gerne: ${SITE_URL}/#termin
 
 Ihr Team von ${SALON}
 
@@ -405,7 +512,7 @@ Ihr Team von ${SALON}
 
   const body = `
       <p style="margin:0 0 16px;">Hallo ${esc(b.name)},</p>
-      <p style="margin:0 0 20px;">Ihr Termin wurde storniert:</p>
+      <p style="margin:0 0 20px;">${intro}</p>
       ${detailBox(detailRow('Leistung', esc(b.service)) + detailRow('Datum', dateLong) + detailRow('Uhrzeit', timeRange))}
       <p style="margin:28px 0 0;text-align:center;">
         <a href="${SITE_URL}/#termin" style="display:inline-block;background:#8a5a3c;color:#ffffff;text-decoration:none;font-family:Arial,sans-serif;font-size:15px;padding:12px 24px;border-radius:2px;">Neuen Termin buchen</a>
@@ -414,7 +521,7 @@ Ihr Team von ${SALON}
 
   MailApp.sendEmail({
     to: b.email,
-    subject: `Termin storniert: ${dateLong}, ${Utilities.formatDate(b.start, TIMEZONE, 'HH:mm')} Uhr – ${SALON}`,
+    subject: `${bySalon ? 'Termin abgesagt' : 'Termin storniert'}: ${dateLong}, ${Utilities.formatDate(b.start, TIMEZONE, 'HH:mm')} Uhr – ${SALON}`,
     body: plain,
     htmlBody: emailLayout(body),
     name: SALON,
@@ -488,11 +595,22 @@ function reply(ok, message, extra) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-/** Einmal im Editor ausführen: fragt die Berechtigungen ab, legt den Kalender an, prüft die Spalten. */
+/**
+ * Einmal im Editor ausführen (und nach jeder Änderung an den Triggern):
+ * fragt die Berechtigungen ab, legt Kalender und Spalten an und richtet die Sync-Trigger ein.
+ */
 function setup() {
-  getCalendar();
+  const calendar = getCalendar();
   const sh = sheet();
   sh.setFrozenRows(1);
   sh.getRange(1, COL.token, 1, 2).setValues([['Token', 'Status']]);
-  Logger.log('Fertig. Kalender und Sheet sind bereit. Besitzer: ' + ownerEmail());
+
+  // alte sync-Trigger entfernen, damit es keine doppelten gibt
+  ScriptApp.getProjectTriggers()
+    .filter((t) => t.getHandlerFunction() === 'sync')
+    .forEach((t) => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('sync').forUserCalendar(calendar.getId()).onEventUpdated().create();
+  ScriptApp.newTrigger('sync').timeBased().everyDays(1).atHour(3).inTimezone(TIMEZONE).create();
+
+  Logger.log('Fertig. Kalender, Sheet und Sync-Trigger sind bereit. Besitzer: ' + ownerEmail());
 }

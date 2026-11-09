@@ -89,7 +89,7 @@
       $('b-date').textContent = booking.dateLong;
       $('b-time').textContent = booking.timeRange;
       $('b-status').textContent = booking.status;
-      $('b-status').classList.toggle('cancelled', booking.status === 'storniert');
+      $('b-status').classList.toggle('cancelled', booking.status.startsWith('storniert'));
       $('actions').classList.toggle('hidden', !booking.canChange);
       $('reason').classList.toggle('hidden', booking.canChange);
       $('reason').textContent = booking.reason;
