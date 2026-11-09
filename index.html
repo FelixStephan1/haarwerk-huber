@@ -159,7 +159,7 @@
             <input type="text" name="name" autocomplete="name" required>
           </label>
           <label>Telefon
-            <input type="tel" name="phone" autocomplete="tel" required>
+            <input type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="+43 660 1234567" required>
           </label>
         </div>
         <label>E-Mail
@@ -224,8 +224,23 @@
       }
     });
 
+    // Telefonnummer prüfen (gleiche Regel wie im Apps Script)
+    function isValidPhone(phone) {
+      if (!/^\+?[0-9 ()\/-]+$/.test(phone)) return false;
+      const digits = phone.replace(/\D/g, '').length;
+      return digits >= 6 && digits <= 15;
+    }
+    const phoneInput = form.elements.phone;
+    phoneInput.addEventListener('input', () => phoneInput.setCustomValidity(''));
+
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      phoneInput.value = phoneInput.value.trim();
+      if (!isValidPhone(phoneInput.value)) {
+        phoneInput.setCustomValidity('Bitte eine gültige Telefonnummer eingeben, z. B. +43 660 1234567');
+        phoneInput.reportValidity();
+        return;
+      }
       const button = form.querySelector('button');
       button.disabled = true;
       status.className = '';

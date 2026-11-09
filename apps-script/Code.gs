@@ -110,7 +110,7 @@ function validate(p) {
   if (!(b.service in SERVICES)) fail('Bitte wählen Sie eine Leistung.');
   if (!b.name) fail('Bitte geben Sie Ihren Namen an.');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b.email)) fail('Bitte geben Sie eine gültige E-Mail-Adresse an.');
-  if (!b.phone) fail('Bitte geben Sie Ihre Telefonnummer an.');
+  if (!isValidPhone(b.phone)) fail('Bitte geben Sie eine gültige Telefonnummer an (z. B. +43 660 1234567).');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(b.date) || !/^\d{2}:\d{2}$/.test(b.time)) fail('Bitte wählen Sie Datum und Uhrzeit.');
 
   b.duration = SERVICES[b.service];
@@ -198,6 +198,17 @@ Ihr Team von ${SALON}
     htmlBody: html,
     name: SALON,
   });
+}
+
+/**
+ * Telefonnummer prüfen: nur Ziffern, Leerzeichen und + / - ( ),
+ * ein + nur ganz vorne, 6 bis 15 Ziffern (15 = internationales Maximum).
+ * Muss mit isValidPhone() in index.html übereinstimmen.
+ */
+function isValidPhone(phone) {
+  if (!/^\+?[0-9 ()\/-]+$/.test(phone)) return false;
+  const digits = phone.replace(/\D/g, '').length;
+  return digits >= 6 && digits <= 15;
 }
 
 /** Text für HTML unschädlich machen (Kundeneingaben!) */
