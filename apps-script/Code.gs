@@ -9,8 +9,9 @@
  *
  * Kalender-Sync (sync): Der Salon arbeitet nur im Google Kalender. Wird ein
  * Termin dort verschoben oder gelöscht, gleicht sync() das Sheet an und
- * informiert den Kunden. Läuft automatisch bei jeder Kalender-Änderung und
- * zusätzlich jede Nacht (Trigger werden von setup() angelegt).
+ * informiert den Kunden. Läuft automatisch SYNC_DELAY_MINUTES nach der letzten
+ * Kalender-Änderung (Wartezeit gegen Verklicken) und zusätzlich jede Nacht
+ * (Trigger werden von setup() angelegt).
  * Termine, die der Salon selbst einträgt (Pause, Urlaub, Telefonbuchung),
  * stehen nicht im Sheet und werden ignoriert – blockieren aber Online-Buchungen.
  *
@@ -70,6 +71,11 @@ const isCancelled = (status) => String(status).startsWith(STATUS.cancelled);
 
 // Bei Änderungen durch den Salon zusätzlich eine Kopie an den Inhaber (so fällt ein versehentliches Verschieben sofort auf)
 const OWNER_COPY_ON_SALON_CHANGES = true;
+
+// Wartezeit nach einer Kalender-Änderung, bevor verglichen wird. Jede weitere Änderung startet die
+// Wartezeit neu. So bekommt der Kunde bei Verklicken / mehrfachem Verschieben nur EINE E-Mail
+// (oder gar keine, wenn der Termin wieder an seinem alten Platz ist).
+const SYNC_DELAY_MINUTES = 2;
 
 
 // ───────────────────────── Einstieg ─────────────────────────
@@ -197,6 +203,26 @@ function move(p) {
 // ───────────────────────── Kalender-Sync ─────────────────────────
 
 /**
+ * Wird bei JEDER Kalender-Änderung aufgerufen (Trigger). Synchronisiert nicht sofort,
+ * sondern stellt einen "Wecker" auf SYNC_DELAY_MINUTES. Ein schon gestellter Wecker
+ * wird gelöscht, die Wartezeit startet also neu.
+ */
+function onCalendarChange() {
+  ScriptApp.getProjectTriggers()
+    .filter((t) => t.getHandlerFunction() === 'syncDelayed')
+    .forEach((t) => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('syncDelayed').timeBased().after(SYNC_DELAY_MINUTES * 60000).create();
+}
+
+/** Der "Wecker": räumt seinen eigenen Trigger weg und synchronisiert. */
+function syncDelayed(e) {
+  ScriptApp.getProjectTriggers()
+    .filter((t) => e && t.getUniqueId() === e.triggerUid)
+    .forEach((t) => ScriptApp.deleteTrigger(t));
+  sync();
+}
+
+/**
  * Vergleicht alle kommenden Buchungen im Sheet mit dem Kalender.
  * Läuft per Trigger (Kalender geändert + jede Nacht). Sendet nur bei echten Unterschieden E-Mails,
  * kann also beliebig oft laufen. Nutzt dieselbe Sperre wie Buchen/Verschieben/Stornieren,
@@ -231,6 +257,9 @@ function sync() {
       if (start.getTime() === b.start.getTime() && end.getTime() === b.end.getTime()) return; // alles gleich
 
       const old = formatWhen(b.start);
+      const oldEnd = Utilities.formatDate(b.end, TIMEZONE, 'HH:mm');
+      const oldDuration = b.duration;
+      const startChanged = start.getTime() !== b.start.getTime();
       b.date = Utilities.formatDate(start, TIMEZONE, 'yyyy-MM-dd');
       b.time = Utilities.formatDate(start, TIMEZONE, 'HH:mm');
       b.duration = Math.round((end - start) / 60000);
@@ -239,20 +268,24 @@ function sync() {
       b.status = STATUS.salonMoved;
       sh.getRange(b.row, COL.date, 1, 4).setValues([["'" + b.date, "'" + b.time, b.service, b.duration]]);
       sh.getRange(b.row, COL.status).setValue(b.status);
-      changes.push({ b, kind: start.getTime() <= now ? 'movedToPast' : 'moved', old });
+      const kind = start.getTime() <= now ? 'movedToPast' : (startChanged ? 'moved' : 'resized');
+      changes.push({ b, kind, old, oldEnd, oldDuration });
     });
   } finally {
     lock.releaseLock();
   }
 
   // E-Mails erst nach dem Freigeben der Sperre (das Sheet ist zu diesem Zeitpunkt schon aktuell)
-  changes.forEach(({ b, kind, old }) => {
+  changes.forEach(({ b, kind, old, oldEnd, oldDuration }) => {
     if (kind === 'cancelled') {
       sendCancellation(b, true);
       if (OWNER_COPY_ON_SALON_CHANGES) notifyOwner(b, 'Vom Salon ABGESAGT – Kunde wurde informiert');
     } else if (kind === 'moved') {
       sendConfirmation(b, 'salonMoved');
       if (OWNER_COPY_ON_SALON_CHANGES) notifyOwner(b, `Vom Salon VERSCHOBEN (vorher ${old}) – Kunde wurde informiert`);
+    } else if (kind === 'resized') {
+      sendConfirmation(b, 'salonResized', { oldEnd });
+      if (OWNER_COPY_ON_SALON_CHANGES) notifyOwner(b, `Vom Salon ANGEPASST (Dauer ${oldDuration} → ${b.duration} Min) – Kunde wurde informiert`);
     } else { // in die Vergangenheit verschoben: Kunde nicht anschreiben, nur Inhaber
       notifyOwner(b, `In die Vergangenheit verschoben (vorher ${old}) – Kunde wurde NICHT informiert`);
     }
@@ -429,9 +462,13 @@ function manageUrl(b) {
   return `${SITE_URL}/termin.html?t=${b.token}`;
 }
 
-/** kind: 'new' = neue Buchung, 'moved' = vom Kunden verschoben, 'salonMoved' = vom Salon verschoben */
-function sendConfirmation(b, kind) {
-  const moved = kind === 'moved' || kind === 'salonMoved';
+/**
+ * kind: 'new' = neue Buchung, 'moved' = vom Kunden verschoben, 'salonMoved' = vom Salon verschoben,
+ *       'salonResized' = vom Salon verlängert/verkürzt (Beginn gleich; extra.oldEnd = alte Endzeit)
+ */
+function sendConfirmation(b, kind, extra) {
+  const startTime = Utilities.formatDate(b.start, TIMEZONE, 'HH:mm');
+  const endTime = Utilities.formatDate(b.end, TIMEZONE, 'HH:mm');
   const dateLong = formatDateLong(b.start);
   const timeRange = formatTimeRange(b);
   const intro = {
@@ -439,6 +476,8 @@ function sendConfirmation(b, kind) {
     moved: 'Ihr Termin wurde verschoben. Hier sind die neuen Termindaten:',
     salonMoved: 'wir mussten Ihren Termin leider verschieben – bitte entschuldigen Sie. ' +
       'Hier sind die neuen Termindaten. Passt Ihnen die neue Zeit nicht, können Sie sie unten ändern oder uns anrufen.',
+    salonResized: `Ihr Termin beginnt wie geplant um ${startTime} Uhr, dauert jetzt aber bis ${endTime} Uhr ` +
+      `(vorher bis ${extra && extra.oldEnd} Uhr). Hier sind die aktuellen Termindaten:`,
   }[kind];
 
   const plain =
@@ -479,10 +518,15 @@ Ihr Team von ${SALON}
       </p>
       <p style="margin:24px 0 0;">Bis bald!<br>Ihr Team von ${SALON}</p>`;
 
-  const subjectStart = moved ? 'Termin verschoben' : 'Terminbestätigung';
+  const subjectStart = {
+    new: 'Terminbestätigung',
+    moved: 'Termin verschoben',
+    salonMoved: 'Termin verschoben',
+    salonResized: 'Termin angepasst',
+  }[kind];
   MailApp.sendEmail({
     to: b.email,
-    subject: `${subjectStart}: ${dateLong}, ${Utilities.formatDate(b.start, TIMEZONE, 'HH:mm')} Uhr – ${SALON}`,
+    subject: `${subjectStart}: ${dateLong}, ${startTime}${kind === 'salonResized' ? '–' + endTime : ''} Uhr – ${SALON}`,
     body: plain,
     htmlBody: emailLayout(body),
     name: SALON,
@@ -605,11 +649,11 @@ function setup() {
   sh.setFrozenRows(1);
   sh.getRange(1, COL.token, 1, 2).setValues([['Token', 'Status']]);
 
-  // alte sync-Trigger entfernen, damit es keine doppelten gibt
+  // alte Trigger entfernen, damit es keine doppelten gibt
   ScriptApp.getProjectTriggers()
-    .filter((t) => t.getHandlerFunction() === 'sync')
+    .filter((t) => ['sync', 'syncDelayed', 'onCalendarChange'].includes(t.getHandlerFunction()))
     .forEach((t) => ScriptApp.deleteTrigger(t));
-  ScriptApp.newTrigger('sync').forUserCalendar(calendar.getId()).onEventUpdated().create();
+  ScriptApp.newTrigger('onCalendarChange').forUserCalendar(calendar.getId()).onEventUpdated().create();
   ScriptApp.newTrigger('sync').timeBased().everyDays(1).atHour(3).inTimezone(TIMEZONE).create();
 
   Logger.log('Fertig. Kalender, Sheet und Sync-Trigger sind bereit. Besitzer: ' + ownerEmail());
