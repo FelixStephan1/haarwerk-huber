@@ -18,6 +18,9 @@ const SHEET_ID = '1fwVo6hySzABl_tT26xx0Z-fv7NR4JD-N_oASHN6JTg8';
 const CALENDAR_NAME = 'Haarwerk Huber';
 const TIMEZONE = 'Europe/Vienna';
 const SALON = 'Haarwerk Huber';
+const ADDRESS = 'Musterstraße 12, 8010 Graz';
+const PHONE = '+43 316 000 000';
+const WEEKDAYS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
 
 // Leistung → Dauer in Minuten (muss zu den Optionen im Formular passen)
 const SERVICES = {
@@ -129,27 +132,78 @@ function validate(p) {
 
 function sendConfirmation(b) {
   const when = Utilities.formatDate(b.start, TIMEZONE, "dd.MM.yyyy 'um' HH:mm");
-  MailApp.sendEmail({
-    to: b.email,
-    subject: `Ihr Termin bei ${SALON} am ${when} Uhr`,
-    body:
+  const weekday = WEEKDAYS[Number(Utilities.formatDate(b.start, TIMEZONE, 'u')) - 1];
+  const dateLong = `${weekday}, ${Utilities.formatDate(b.start, TIMEZONE, 'dd.MM.yyyy')}`;
+  const timeRange = `${Utilities.formatDate(b.start, TIMEZONE, 'HH:mm')} – ${Utilities.formatDate(b.end, TIMEZONE, 'HH:mm')} Uhr`;
+
+  // Klartext-Version für E-Mail-Programme ohne HTML
+  const plain =
 `Hallo ${b.name},
 
 vielen Dank für Ihre Buchung! Hier Ihre Termindaten:
 
 Leistung: ${b.service}
-Termin:   ${when} Uhr (ca. ${b.duration} Minuten)
-Adresse:  Musterstraße 12, 8010 Graz
+Termin:   ${dateLong}, ${timeRange}
+Adresse:  ${ADDRESS}
 
 Sie können den Termin nicht wahrnehmen? Bitte sagen Sie uns bis spätestens
-24 Stunden vorher unter +43 316 000 000 Bescheid.
+24 Stunden vorher unter ${PHONE} Bescheid.
 
 Wir freuen uns auf Sie!
 Ihr Team von ${SALON}
 
-(Hinweis: Dies ist ein Übungsprojekt – der Salon ist erfunden.)`,
+(Hinweis: Dies ist ein Übungsprojekt – der Salon ist erfunden.)`;
+
+  const row = (label, value) =>
+    `<tr><td style="padding:8px 0;color:#6f655c;width:110px;vertical-align:top;">${label}</td>` +
+    `<td style="padding:8px 0;color:#2b2622;">${value}</td></tr>`;
+
+  const html = `
+<div style="background:#faf7f2;padding:32px 16px;font-family:Georgia,'Times New Roman',serif;">
+  <table role="presentation" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;margin:0 auto;background:#ffffff;border:1px solid #e4dcd0;">
+    <tr><td style="padding:28px 32px;text-align:center;border-bottom:1px solid #e4dcd0;">
+      <div style="font-size:28px;color:#2b2622;">${SALON}</div>
+      <div style="font-size:14px;color:#6f655c;margin-top:4px;">Ihr Friseur in Graz</div>
+    </td></tr>
+    <tr><td style="padding:28px 32px;color:#2b2622;font-size:16px;line-height:1.6;">
+      <p style="margin:0 0 16px;">Hallo ${esc(b.name)},</p>
+      <p style="margin:0 0 20px;">vielen Dank für Ihre Buchung – wir freuen uns auf Sie!</p>
+      <div style="background:#faf7f2;border-left:3px solid #8a5a3c;padding:16px 20px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;font-size:15px;font-family:Arial,sans-serif;">
+          ${row('Leistung', esc(b.service))}
+          ${row('Datum', dateLong)}
+          ${row('Uhrzeit', `${timeRange} <span style="color:#6f655c;">(ca. ${b.duration} Min.)</span>`)}
+          ${row('Adresse', ADDRESS)}
+          ${b.message ? row('Ihre Nachricht', esc(b.message)) : ''}
+        </table>
+      </div>
+      <p style="margin:24px 0 0;font-size:15px;">
+        Sie können den Termin nicht wahrnehmen? Bitte sagen Sie uns bis spätestens
+        24&nbsp;Stunden vorher Bescheid:
+        <a href="tel:${PHONE.replace(/\s/g, '')}" style="color:#8a5a3c;">${PHONE}</a>
+      </p>
+      <p style="margin:24px 0 0;">Bis bald!<br>Ihr Team von ${SALON}</p>
+    </td></tr>
+    <tr><td style="padding:16px 32px;text-align:center;font-family:Arial,sans-serif;font-size:12px;color:#6f655c;border-top:1px solid #e4dcd0;">
+      ${SALON} · ${ADDRESS} · ${PHONE}<br>
+      Übungsprojekt – dieser Friseursalon ist erfunden.
+    </td></tr>
+  </table>
+</div>`;
+
+  MailApp.sendEmail({
+    to: b.email,
+    subject: `Terminbestätigung: ${dateLong}, ${Utilities.formatDate(b.start, TIMEZONE, 'HH:mm')} Uhr – ${SALON}`,
+    body: plain,
+    htmlBody: html,
     name: SALON,
   });
+}
+
+/** Text für HTML unschädlich machen (Kundeneingaben!) */
+function esc(text) {
+  return String(text).replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 }
 
 function notifyOwner(b) {
