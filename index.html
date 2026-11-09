@@ -122,8 +122,16 @@
 
     dateInput.min = todayISO();
 
-    // Uhrzeiten neu berechnen, wenn Datum oder Leistung (= Dauer) sich ändert
-    const updateTimes = () => fillTimes(timeSelect, dateInput.value, SERVICES[serviceSelect.value] || 15);
+    // Freie Uhrzeiten neu laden, wenn Datum oder Leistung (= Dauer) sich ändert
+    function updateTimes() {
+      if (!serviceSelect.value) {
+        timeSelect.innerHTML = '';
+        timeSelect.add(new Option('Bitte zuerst Leistung wählen', ''));
+        return;
+      }
+      loadFreeTimes(timeSelect, dateInput.value, { service: serviceSelect.value }, SERVICES[serviceSelect.value]);
+    }
+    updateTimes();
     dateInput.addEventListener('change', updateTimes);
     serviceSelect.addEventListener('change', updateTimes);
 
@@ -143,7 +151,8 @@
       try {
         const data = await callBooking('POST', new FormData(form));
         showStatus(status, data.ok ? 'ok' : 'error', data.message);
-        if (data.ok) { form.reset(); updateTimes(); }
+        if (data.ok) form.reset();
+        updateTimes(); // nach Erfolg zurücksetzen, nach "nicht frei" die aktuellen Zeiten zeigen
       } catch (err) {
         showStatus(status, 'error', 'Die Buchung konnte nicht gesendet werden. Bitte rufen Sie uns an: ' + PHONE);
       } finally {

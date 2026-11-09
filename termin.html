@@ -120,14 +120,16 @@
     const dateInput = moveForm.elements.date;
     const timeSelect = moveForm.elements.time;
     dateInput.min = todayISO();
-    dateInput.addEventListener('change', () => fillTimes(timeSelect, dateInput.value, booking.duration));
+    // Freie Zeiten laden. Mit Token: Script nimmt die Dauer der Buchung, eigener Termin gilt als frei
+    const updateTimes = () => loadFreeTimes(timeSelect, dateInput.value, { t: token }, booking.duration);
+    dateInput.addEventListener('change', updateTimes);
 
-    $('show-move').addEventListener('click', () => {
+    $('show-move').addEventListener('click', async () => {
       dateInput.value = booking.date;
-      fillTimes(timeSelect, booking.date, booking.duration);
-      timeSelect.value = booking.time;
       moveForm.classList.remove('hidden');
       showStatus(status, '', '');
+      await updateTimes();
+      timeSelect.value = booking.time;
     });
     $('hide-move').addEventListener('click', () => moveForm.classList.add('hidden'));
 
@@ -142,6 +144,7 @@
         const data = await callBooking('POST', { action: 'move', t: token, date: dateInput.value, time: timeSelect.value });
         showStatus(status, data.ok ? 'ok' : 'error', data.message);
         if (data.ok) { moveForm.classList.add('hidden'); await reload(); }
+        else updateTimes(); // z. B. inzwischen belegt → aktuelle freie Zeiten zeigen
       } catch (err) {
         showStatus(status, 'error', 'Das hat leider nicht geklappt. Bitte rufen Sie uns an: ' + PHONE);
       } finally {

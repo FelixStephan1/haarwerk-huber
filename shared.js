@@ -24,7 +24,46 @@ function todayISO() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-/** Uhrzeiten-Auswahl füllen: nur Zeiten, bei denen die Leistung vor Ladenschluss fertig ist */
+/**
+ * Uhrzeiten-Auswahl mit den FREIEN Zeiten vom Apps Script füllen.
+ * params: { service } bei neuer Buchung oder { t } (Token) beim Verschieben.
+ * Wenn das Script nicht erreichbar ist: Notlösung mit fillTimes() (nur Öffnungszeiten),
+ * das Script prüft beim Absenden ohnehin alles noch einmal.
+ */
+let slotRequest = 0; // Zähler: Antworten auf veraltete Anfragen ignorieren
+async function loadFreeTimes(select, dateStr, params, fallbackDuration) {
+  const request = ++slotRequest;
+  select.innerHTML = '';
+  if (!dateStr) {
+    select.add(new Option('Bitte zuerst Datum wählen', ''));
+    return;
+  }
+  if (!HOURS[new Date(dateStr + 'T12:00').getDay()]) {
+    select.add(new Option('An diesem Tag geschlossen', ''));
+    return;
+  }
+  select.add(new Option('Freie Zeiten werden geladen …', ''));
+  select.disabled = true;
+  try {
+    const data = await callBooking('GET', Object.assign({ action: 'slots', date: dateStr }, params));
+    if (request !== slotRequest) return; // inzwischen wurde ein anderes Datum gewählt
+    if (!data.ok) throw new Error(data.message);
+    select.innerHTML = '';
+    if (data.slots.length === 0) {
+      select.add(new Option('An diesem Tag ist leider nichts mehr frei', ''));
+      return;
+    }
+    select.add(new Option('Bitte wählen …', ''));
+    data.slots.forEach((t) => select.add(new Option(t, t)));
+  } catch (err) {
+    if (request !== slotRequest) return;
+    fillTimes(select, dateStr, fallbackDuration);
+  } finally {
+    if (request === slotRequest) select.disabled = false;
+  }
+}
+
+/** Notlösung ohne Script: nur Zeiten, bei denen die Leistung vor Ladenschluss fertig ist */
 function fillTimes(select, dateStr, duration) {
   select.innerHTML = '';
   if (!dateStr) {

@@ -4,6 +4,7 @@
  * Aktionen (Parameter "action"):
  *   POST book   – neue Buchung: prüfen, Kalender, Sheet, Bestätigung, Info an Inhaber
  *   GET  get    – Buchung zu einem Token anzeigen (für termin.html)
+ *   GET  slots  – freie Startzeiten für ein Datum (Öffnungszeiten, Dauer, Kalender)
  *   POST cancel – Buchung stornieren (bis 24 h vorher)
  *   POST move   – Buchung verschieben (bis 24 h vorher)
  *
@@ -82,9 +83,21 @@ const SYNC_DELAY_MINUTES = 2;
 
 function doGet(e) {
   return handle(e, (p) => {
-    if (p.action !== 'get') fail('Unbekannte Aktion.');
-    const b = findBooking(p.t);
-    return reply(true, '', { booking: publicView(b) });
+    if (p.action === 'get') {
+      const b = findBooking(p.t);
+      return reply(true, '', { booking: publicView(b) });
+    }
+    if (p.action === 'slots') {
+      // Beim Verschieben (Token dabei): Dauer aus der Buchung, eigener Termin zählt nicht als belegt
+      if (p.t) {
+        const b = findBooking(p.t);
+        return reply(true, '', { slots: freeSlots(String(p.date || ''), b.duration, b.eventId) });
+      }
+      const duration = SERVICES[p.service];
+      if (!duration) fail('Bitte wählen Sie eine Leistung.');
+      return reply(true, '', { slots: freeSlots(String(p.date || ''), duration, null) });
+    }
+    fail('Unbekannte Aktion.');
   });
 }
 
@@ -353,6 +366,36 @@ function checkSlot(date, time, duration) {
     fail('Dieser Termin liegt (mit der Dauer der Leistung) außerhalb unserer Öffnungszeiten.');
   }
   return { start, end };
+}
+
+/**
+ * Freie Startzeiten (alle 15 Min.) an einem Tag: innerhalb der Öffnungszeiten, inklusive Dauer,
+ * mindestens 1 Stunde im Voraus und ohne Überschneidung mit Kalender-Einträgen
+ * (Buchungen, Pausen, Urlaub …). excludeEventId: eigener Termin beim Verschieben.
+ * Nur eine Anzeige-Hilfe – beim Buchen wird trotzdem alles noch einmal geprüft.
+ */
+function freeSlots(date, duration, excludeEventId) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) fail('Bitte wählen Sie ein Datum.');
+  const dayStart = Utilities.parseDate(`${date} 00:00`, TIMEZONE, 'yyyy-MM-dd HH:mm');
+  const hours = OPENING_HOURS[Number(Utilities.formatDate(dayStart, TIMEZONE, 'u')) % 7];
+  if (!hours) return [];
+
+  const open = new Date(dayStart.getTime() + hours[0] * 60000);
+  const close = new Date(dayStart.getTime() + hours[1] * 60000);
+  const busy = getCalendar().getEvents(open, close)
+    .filter((ev) => ev.getId() !== excludeEventId)
+    .map((ev) => [ev.getStartTime().getTime(), ev.getEndTime().getTime()]);
+  const earliest = Date.now() + 60 * 60000;
+
+  const slots = [];
+  for (let m = hours[0]; m + duration <= hours[1]; m += 15) {
+    const start = dayStart.getTime() + m * 60000;
+    const end = start + duration * 60000;
+    if (start < earliest) continue;
+    if (busy.some(([bs, be]) => bs < end && be > start)) continue;
+    slots.push(String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'));
+  }
+  return slots;
 }
 
 /**
