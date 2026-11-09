@@ -73,6 +73,21 @@
       color: var(--muted);
       padding: 2rem 1rem 3rem;
     }
+    form { display: grid; gap: 1rem; font-family: system-ui, sans-serif; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 560px) { .row { grid-template-columns: 1fr; } }
+    label { display: grid; gap: 0.3rem; font-size: 0.9rem; color: var(--muted); }
+    input, select, textarea {
+      font: inherit; color: var(--text); background: #fff;
+      border: 1px solid var(--line); border-radius: 2px; padding: 0.65rem 0.75rem;
+    }
+    textarea { min-height: 5rem; resize: vertical; }
+    form button { border: none; cursor: pointer; font-size: 1rem; justify-self: start; margin-top: 0.5rem; }
+    form button:disabled { opacity: 0.6; cursor: wait; }
+    .hp { position: absolute; left: -9999px; }
+    #form-status { min-height: 1.5rem; font-family: system-ui, sans-serif; }
+    #form-status.ok { color: #2f6b3a; }
+    #form-status.error { color: #a33a2a; }
   </style>
 </head>
 <body>
@@ -82,7 +97,7 @@
   <header>
     <h1>Haarwerk Huber</h1>
     <p>Ihr Friseur in Graz – für Damen, Herren und Kinder</p>
-    <a class="button" href="#kontakt">Termin vereinbaren</a>
+    <a class="button" href="#termin">Termin vereinbaren</a>
   </header>
 
   <main>
@@ -116,6 +131,52 @@
       </table>
     </section>
 
+    <section id="termin">
+      <h2>Termin buchen</h2>
+      <form id="booking-form">
+        <label>Leistung
+          <select name="service" required>
+            <option value="">Bitte wählen …</option>
+            <option>Damen – Waschen, Schneiden, Föhnen</option>
+            <option>Herren – Waschen, Schneiden, Styling</option>
+            <option>Kinder bis 12 Jahre</option>
+            <option>Färben (Ansatz)</option>
+            <option>Strähnen</option>
+            <option>Bart trimmen</option>
+            <option>Hochsteckfrisur</option>
+          </select>
+        </label>
+        <div class="row">
+          <label>Datum
+            <input type="date" name="date" required>
+          </label>
+          <label>Uhrzeit
+            <select name="time" required><option value="">Bitte wählen …</option></select>
+          </label>
+        </div>
+        <div class="row">
+          <label>Name
+            <input type="text" name="name" autocomplete="name" required>
+          </label>
+          <label>Telefon
+            <input type="tel" name="phone" autocomplete="tel" required>
+          </label>
+        </div>
+        <label>E-Mail
+          <input type="email" name="email" autocomplete="email" required>
+        </label>
+        <label>Nachricht (optional)
+          <textarea name="message" placeholder="z. B. Wünsche zur Frisur"></textarea>
+        </label>
+        <label class="hp" aria-hidden="true">Website
+          <input type="text" name="website" tabindex="-1" autocomplete="off">
+        </label>
+        <button type="submit" class="button">Termin buchen</button>
+        <p id="form-status" role="status"></p>
+      </form>
+      <p class="small">Geöffnet Di–Fr 9–18 Uhr, Sa 8–13 Uhr. Mit dem Absenden stimmen Sie zu, dass wir Ihre Angaben zur Terminvergabe speichern.</p>
+    </section>
+
     <section id="kontakt">
       <h2>Kontakt</h2>
       <p>Haarwerk Huber<br>
@@ -125,7 +186,6 @@
         Telefon: +43 316 000 000<br>
         E-Mail: termin@haarwerk-huber.at
       </p>
-      <p class="small">Online-Terminbuchung folgt in Kürze.</p>
     </section>
 
   </main>
@@ -133,6 +193,57 @@
   <footer>
     © 2026 Haarwerk Huber · Impressum · Datenschutz
   </footer>
+
+  <script>
+    // URL der Apps-Script-Web-App (Bereitstellen → Web-App)
+    const BOOKING_URL = 'https://script.google.com/macros/s/AKfycbwmrHakHJ1OROm2lAyTSuZxV8D6NL0SzJc1zIDO6RZA3aP7IMScyE-cWyZx6KR5PzStaw/exec';
+
+    const form = document.getElementById('booking-form');
+    const status = document.getElementById('form-status');
+    const dateInput = form.elements.date;
+    const timeSelect = form.elements.time;
+
+    // Öffnungszeiten (Wochentag 0 = Sonntag): [von, bis] in Minuten
+    const HOURS = { 2: [540, 1080], 3: [540, 1080], 4: [540, 1080], 5: [540, 1080], 6: [480, 780] };
+
+    const today = new Date();
+    dateInput.min = today.toISOString().slice(0, 10);
+
+    dateInput.addEventListener('change', () => {
+      timeSelect.innerHTML = '';
+      const day = new Date(dateInput.value + 'T12:00').getDay();
+      const h = HOURS[day];
+      if (!h) {
+        timeSelect.innerHTML = '<option value="">An diesem Tag geschlossen</option>';
+        return;
+      }
+      timeSelect.innerHTML = '<option value="">Bitte wählen …</option>';
+      for (let m = h[0]; m < h[1]; m += 15) {
+        const t = String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+        timeSelect.add(new Option(t, t));
+      }
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const button = form.querySelector('button');
+      button.disabled = true;
+      status.className = '';
+      status.textContent = 'Wird gesendet …';
+      try {
+        const res = await fetch(BOOKING_URL, { method: 'POST', body: new URLSearchParams(new FormData(form)) });
+        const data = await res.json();
+        status.className = data.ok ? 'ok' : 'error';
+        status.textContent = data.message;
+        if (data.ok) form.reset();
+      } catch (err) {
+        status.className = 'error';
+        status.textContent = 'Die Buchung konnte nicht gesendet werden. Bitte rufen Sie uns an: +43 316 000 000';
+      } finally {
+        button.disabled = false;
+      }
+    });
+  </script>
 
 </body>
 </html>
