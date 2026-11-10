@@ -13,6 +13,9 @@
  * informiert den Kunden. Läuft automatisch SYNC_DELAY_MINUTES nach der letzten
  * Kalender-Änderung (Wartezeit gegen Verklicken) und zusätzlich jede Nacht
  * (Trigger werden von setup() angelegt).
+ * Datenschutz (nightly → cleanupOldBookings): Buchungen werden RETENTION_MONTHS nach dem
+ * Termin gelöscht (Sheet-Zeile + Kalender-Termin), so wie es datenschutz.html verspricht.
+ *
  * Termine, die der Salon selbst einträgt (Pause, Urlaub, Telefonbuchung),
  * stehen nicht im Sheet und werden ignoriert – blockieren aber Online-Buchungen.
  *
@@ -77,6 +80,9 @@ const OWNER_COPY_ON_SALON_CHANGES = true;
 // Wartezeit neu. So bekommt der Kunde bei Verklicken / mehrfachem Verschieben nur EINE E-Mail
 // (oder gar keine, wenn der Termin wieder an seinem alten Platz ist).
 const SYNC_DELAY_MINUTES = 2;
+
+// Wie lange Buchungen nach dem Termin aufbewahrt werden (muss zu datenschutz.html passen!)
+const RETENTION_MONTHS = 12;
 
 
 // ───────────────────────── Einstieg ─────────────────────────
@@ -303,6 +309,46 @@ function sync() {
       notifyOwner(b, `In die Vergangenheit verschoben (vorher ${old}) – Kunde wurde NICHT informiert`);
     }
   });
+}
+
+/** Läuft jede Nacht (Trigger): Sicherheits-Sync + alte Buchungen löschen */
+function nightly() {
+  sync();
+  cleanupOldBookings();
+}
+
+/**
+ * Löscht Buchungen, deren Termin länger als RETENTION_MONTHS zurückliegt:
+ * die Sheet-Zeile und den Kalender-Termin (enthält Name und Telefon).
+ * Einträge des Salons ohne Buchung (Pause, Urlaub …) werden nicht angefasst.
+ */
+function cleanupOldBookings() {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(30000)) return; // beschäftigt → nächste Nacht
+  try {
+    const sh = sheet();
+    const last = sh.getLastRow();
+    if (last < 2) return;
+    const cutoff = new Date();
+    cutoff.setMonth(cutoff.getMonth() - RETENTION_MONTHS);
+    const calendar = getCalendar();
+    const rows = sh.getRange(2, 1, last - 1, COL.status).getDisplayValues();
+
+    let deleted = 0;
+    // von unten nach oben, damit sich die Zeilennummern beim Löschen nicht verschieben
+    for (let i = rows.length - 1; i >= 0; i--) {
+      let b;
+      try { b = rowToBooking(rows[i], i + 2); } catch (err) { continue; } // kaputte Zeile → überspringen
+      if (isNaN(b.start.getTime()) || b.start >= cutoff) continue;
+      const event = b.eventId && calendar.getEventById(b.eventId);
+      if (event) event.deleteEvent();
+      sh.deleteRow(b.row);
+      deleted++;
+    }
+    if (deleted > 0) Logger.log(`Datenschutz: ${deleted} alte Buchung(en) gelöscht (Termin vor ${formatWhen(cutoff)}).`);
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 /**
@@ -694,10 +740,10 @@ function setup() {
 
   // alte Trigger entfernen, damit es keine doppelten gibt
   ScriptApp.getProjectTriggers()
-    .filter((t) => ['sync', 'syncDelayed', 'onCalendarChange'].includes(t.getHandlerFunction()))
+    .filter((t) => ['sync', 'syncDelayed', 'onCalendarChange', 'nightly'].includes(t.getHandlerFunction()))
     .forEach((t) => ScriptApp.deleteTrigger(t));
   ScriptApp.newTrigger('onCalendarChange').forUserCalendar(calendar.getId()).onEventUpdated().create();
-  ScriptApp.newTrigger('sync').timeBased().everyDays(1).atHour(3).inTimezone(TIMEZONE).create();
+  ScriptApp.newTrigger('nightly').timeBased().everyDays(1).atHour(3).inTimezone(TIMEZONE).create();
 
   Logger.log('Fertig. Kalender, Sheet und Sync-Trigger sind bereit. Besitzer: ' + ownerEmail());
 }
