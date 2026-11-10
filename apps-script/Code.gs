@@ -390,7 +390,7 @@ function sendReminders() {
     if (now - bookedAt < REMINDER_SKIP_IF_BOOKED_WITHIN_HOURS * 3600000) return; // gerade erst gebucht
 
     try {
-      sendReminder(b);
+      sendReminderEmail_(b);
       sh.getRange(b.row, COL.reminded).setValue("'" + key);
       sent++;
     } catch (err) { // eine kaputte Adresse soll die anderen Erinnerungen nicht aufhalten
@@ -711,7 +711,7 @@ Ihr Team von ${SALON}
 }
 
 /** Erinnerung am Vorabend. Kein Änderungs-Link: online geht's ab jetzt nicht mehr (weniger als 24 h). */
-function sendReminder(b) {
+function sendReminderEmail_(b) {
   const dateLong = formatDateLong(b.start);
   const timeRange = formatTimeRange(b);
   const startTime = Utilities.formatDate(b.start, TIMEZONE, 'HH:mm');
