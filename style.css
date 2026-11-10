@@ -99,3 +99,11 @@ button.button.secondary { border: 1px solid var(--accent); }
 .badge.cancelled { background: #f3d9d4; color: #a33a2a; }
 
 main a { color: var(--accent); }
+
+/* Impressum / Datenschutz */
+.legal h2 { font-size: 1.4rem; margin: 2rem 0 0.75rem; }
+.legal h2:first-child { margin-top: 0; }
+.legal p, .legal ul { margin-bottom: 1rem; }
+.legal ul { padding-left: 1.25rem; }
+.fictional { background: #f3ece2; border-left: 3px solid var(--accent); padding: 0.75rem 1rem; font-family: system-ui, sans-serif; font-size: 0.9rem; margin-bottom: 2rem; }
+footer a { color: inherit; }
