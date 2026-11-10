@@ -19,6 +19,8 @@
  * erinnert wurde (wird der Termin verschoben, gibt es für den neuen Termin wieder eine).
  * Datenschutz (nightly → cleanupOldBookings): Buchungen werden RETENTION_MONTHS nach dem
  * Termin gelöscht (Sheet-Zeile + Kalender-Termin), so wie es datenschutz.html verspricht.
+ * Dazu (cleanupOldEmails): die E-Mails, die dieses Skript verschickt hat (Bestätigungen, Erinnerungen,
+ * Infos an den Inhaber), wandern nach RETENTION_MONTHS in den Papierkorb (Gmail leert ihn nach 30 Tagen).
  *
  * Termine, die der Salon selbst einträgt (Pause, Urlaub, Telefonbuchung),
  * stehen nicht im Sheet und werden ignoriert – blockieren aber Online-Buchungen.
@@ -321,10 +323,40 @@ function sync() {
   });
 }
 
-/** Läuft jede Nacht (Trigger): Sicherheits-Sync + alte Buchungen löschen */
+/** Läuft jede Nacht (Trigger): Sicherheits-Sync + alte Buchungen und E-Mails löschen */
 function nightly() {
   sync();
   cleanupOldBookings();
+  cleanupOldEmails();
+}
+
+// Betreffzeilen, die NUR dieses Skript verschickt (Kunden-E-Mails enden auf "– SALON",
+// Infos an den Inhaber beginnen mit "[SALON]"). Andere E-Mails des Salons werden nie angefasst –
+// z. B. Rechnungen, die 7 Jahre aufbewahrt werden müssen.
+const SCRIPT_SUBJECT = new RegExp(
+  `^(\\[${SALON}\\] |(Terminbestätigung|Termin verschoben|Termin angepasst|Termin storniert|Termin abgesagt|Erinnerung: Ihr Termin morgen)[:,].* – ${SALON}$)`);
+
+/**
+ * Verschiebt E-Mail-Verläufe, die dieses Skript gestartet hat und deren letzte Nachricht älter als
+ * RETENTION_MONTHS ist, in den Papierkorb. Antworten von Kunden im selben Verlauf gehen mit.
+ * Doppelt abgesichert: Gmail-Suche grenzt grob ein, die Betreffzeile wird im Code genau geprüft.
+ */
+function cleanupOldEmails() {
+  const cutoff = new Date();
+  cutoff.setMonth(cutoff.getMonth() - RETENTION_MONTHS);
+  const query = `from:me older_than:${RETENTION_MONTHS}m "${SALON}"`;
+  let trashed = 0;
+  let start = 0;
+  for (let round = 0; round < 20; round++) { // höchstens 20 Seiten pro Nacht, der Rest kommt morgen
+    const threads = GmailApp.search(query, start, 100);
+    if (threads.length === 0) break;
+    const old = threads.filter((t) =>
+      SCRIPT_SUBJECT.test(t.getFirstMessageSubject()) && t.getLastMessageDate() < cutoff);
+    if (old.length > 0) GmailApp.moveThreadsToTrash(old);
+    trashed += old.length;
+    start += threads.length - old.length; // Gelöschte verschwinden aus der Suche, der Rest rückt nach
+  }
+  if (trashed > 0) Logger.log(`Datenschutz: ${trashed} alte E-Mail-Verläufe in den Papierkorb verschoben.`);
 }
 
 /**
