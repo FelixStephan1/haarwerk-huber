@@ -13,6 +13,10 @@
  * informiert den Kunden. Läuft automatisch SYNC_DELAY_MINUTES nach der letzten
  * Kalender-Änderung (Wartezeit gegen Verklicken) und zusätzlich jede Nacht
  * (Trigger werden von setup() angelegt).
+ * Erinnerung (sendReminders): jeden Abend gegen REMINDER_HOUR Uhr bekommen alle Kunden mit einem
+ * Termin am nächsten Tag eine Erinnerung – außer die Buchung ist jünger als
+ * REMINDER_SKIP_IF_BOOKED_WITHIN_HOURS Stunden (die Bestätigung kam ja gerade erst). Spalte M merkt sich, für welchen Termin schon
+ * erinnert wurde (wird der Termin verschoben, gibt es für den neuen Termin wieder eine).
  * Datenschutz (nightly → cleanupOldBookings): Buchungen werden RETENTION_MONTHS nach dem
  * Termin gelöscht (Sheet-Zeile + Kalender-Termin), so wie es datenschutz.html verspricht.
  *
@@ -63,6 +67,7 @@ const OPENING_HOURS = {
 const COL = {
   received: 1, date: 2, time: 3, service: 4, duration: 5, name: 6,
   email: 7, phone: 8, message: 9, eventId: 10, token: 11, status: 12,
+  reminded: 13, // Datum + Uhrzeit des Termins, für den die Erinnerung verschickt wurde
 };
 const STATUS = {
   booked: 'gebucht',
@@ -83,6 +88,11 @@ const SYNC_DELAY_MINUTES = 2;
 
 // Wie lange Buchungen nach dem Termin aufbewahrt werden (muss zu datenschutz.html passen!)
 const RETENTION_MONTHS = 12;
+
+// Erinnerungs-E-Mail am Abend vor dem Termin (Google startet den Trigger ca. ±15 Min. um diese Uhrzeit)
+const REMINDER_HOUR = 18;
+// Keine Erinnerung, wenn die Buchung erst vor weniger als so vielen Stunden gemacht wurde
+const REMINDER_SKIP_IF_BOOKED_WITHIN_HOURS = 12;
 
 
 // ───────────────────────── Einstieg ─────────────────────────
@@ -349,6 +359,45 @@ function cleanupOldBookings() {
   } finally {
     lock.releaseLock();
   }
+}
+
+/**
+ * Läuft jeden Abend (Trigger, ca. REMINDER_HOUR Uhr): erinnert alle Kunden mit einem Termin morgen.
+ * Übersprungen werden: stornierte Termine, Buchungen von vor weniger als
+ * REMINDER_SKIP_IF_BOOKED_WITHIN_HOURS Stunden, und Termine, für die schon erinnert wurde (Spalte M = "Datum Uhrzeit" des Termins).
+ * Läuft der Trigger doppelt, geht also keine zweite E-Mail raus.
+ */
+function sendReminders() {
+  sync(); // zuerst Kalender-Änderungen des Salons übernehmen, damit die Erinnerung stimmt
+
+  const sh = sheet();
+  const last = sh.getLastRow();
+  if (last < 2) return;
+  const now = new Date();
+  const tomorrow = Utilities.formatDate(new Date(now.getTime() + 24 * 3600000), TIMEZONE, 'yyyy-MM-dd');
+  const received = sh.getRange(2, COL.received, last - 1, 1).getValues(); // echte Datumswerte
+  const rows = sh.getRange(2, 1, last - 1, COL.reminded).getDisplayValues();
+
+  let sent = 0;
+  rows.forEach((r, i) => {
+    let b;
+    try { b = rowToBooking(r, i + 2); } catch (err) { return; } // kaputte Zeile → überspringen
+    if (!b.token || isCancelled(b.status)) return;
+    if (b.date !== tomorrow || b.start <= now) return;
+    const key = `${b.date} ${b.time}`;
+    if (r[COL.reminded - 1] === key) return; // für diesen Termin schon erinnert
+    const bookedAt = new Date(received[i][0]); // Eingang (Spalte A); ungültig → NaN → wird nicht übersprungen
+    if (now - bookedAt < REMINDER_SKIP_IF_BOOKED_WITHIN_HOURS * 3600000) return; // gerade erst gebucht
+
+    try {
+      sendReminder(b);
+      sh.getRange(b.row, COL.reminded).setValue("'" + key);
+      sent++;
+    } catch (err) { // eine kaputte Adresse soll die anderen Erinnerungen nicht aufhalten
+      MailApp.sendEmail(ownerEmail(), `[${SALON}] FEHLER bei Erinnerung: ${b.name}`, `${err}\n${err.stack || ''}`);
+    }
+  });
+  if (sent > 0) Logger.log(`${sent} Erinnerung(en) für ${tomorrow} verschickt.`);
 }
 
 /**
@@ -661,6 +710,53 @@ Ihr Team von ${SALON}
   });
 }
 
+/** Erinnerung am Vorabend. Kein Änderungs-Link: online geht's ab jetzt nicht mehr (weniger als 24 h). */
+function sendReminder(b) {
+  const dateLong = formatDateLong(b.start);
+  const timeRange = formatTimeRange(b);
+  const startTime = Utilities.formatDate(b.start, TIMEZONE, 'HH:mm');
+  const plain =
+`Hallo ${b.name},
+
+wir möchten Sie an Ihren Termin morgen erinnern:
+
+Leistung: ${b.service}
+Termin:   ${dateLong}, ${timeRange}
+Adresse:  ${ADDRESS}
+
+Sie können doch nicht kommen? Bitte rufen Sie uns so bald wie möglich an: ${PHONE}
+Online ist eine Änderung jetzt nicht mehr möglich.
+
+Bis morgen!
+Ihr Team von ${SALON}
+
+(Hinweis: Dies ist ein Übungsprojekt – der Salon ist erfunden.)`;
+
+  const body = `
+      <p style="margin:0 0 16px;">Hallo ${esc(b.name)},</p>
+      <p style="margin:0 0 20px;">wir möchten Sie an Ihren Termin <strong>morgen</strong> erinnern:</p>
+      ${detailBox(detailRow('Leistung', esc(b.service)) + detailRow('Datum', dateLong) +
+        detailRow('Uhrzeit', `${timeRange} <span style="color:#6f655c;">(ca. ${b.duration} Min.)</span>`) +
+        detailRow('Adresse', ADDRESS))}
+      <p style="margin:24px 0 0;">Sie können doch nicht kommen? Bitte rufen Sie uns so bald wie möglich an –
+        dann können wir den Termin noch jemand anderem geben.</p>
+      <p style="margin:20px 0 0;text-align:center;">
+        <a href="tel:${PHONE.replace(/\s/g, '')}" style="display:inline-block;background:#8a5a3c;color:#ffffff;text-decoration:none;font-family:Arial,sans-serif;font-size:15px;padding:12px 24px;border-radius:2px;">Anrufen: ${PHONE}</a>
+      </p>
+      <p style="margin:12px 0 0;text-align:center;font-family:Arial,sans-serif;font-size:13px;color:#6f655c;">
+        Online ist eine Änderung jetzt nicht mehr möglich.
+      </p>
+      <p style="margin:24px 0 0;">Bis morgen!<br>Ihr Team von ${SALON}</p>`;
+
+  MailApp.sendEmail({
+    to: b.email,
+    subject: `Erinnerung: Ihr Termin morgen, ${dateLong}, ${startTime} Uhr – ${SALON}`,
+    body: plain,
+    htmlBody: emailLayout(body),
+    name: SALON,
+  });
+}
+
 function notifyOwner(b, what) {
   const when = formatWhen(b.start);
   MailApp.sendEmail(ownerEmail(), `[${SALON}] ${what}: ${when} – ${b.name}`,
@@ -736,14 +832,15 @@ function setup() {
   const calendar = getCalendar();
   const sh = sheet();
   sh.setFrozenRows(1);
-  sh.getRange(1, COL.token, 1, 2).setValues([['Token', 'Status']]);
+  sh.getRange(1, COL.token, 1, 3).setValues([['Token', 'Status', 'Erinnert für']]);
 
   // alte Trigger entfernen, damit es keine doppelten gibt
   ScriptApp.getProjectTriggers()
-    .filter((t) => ['sync', 'syncDelayed', 'onCalendarChange', 'nightly'].includes(t.getHandlerFunction()))
+    .filter((t) => ['sync', 'syncDelayed', 'onCalendarChange', 'nightly', 'sendReminders'].includes(t.getHandlerFunction()))
     .forEach((t) => ScriptApp.deleteTrigger(t));
   ScriptApp.newTrigger('onCalendarChange').forUserCalendar(calendar.getId()).onEventUpdated().create();
   ScriptApp.newTrigger('nightly').timeBased().everyDays(1).atHour(3).inTimezone(TIMEZONE).create();
+  ScriptApp.newTrigger('sendReminders').timeBased().everyDays(1).atHour(REMINDER_HOUR).nearMinute(0).inTimezone(TIMEZONE).create();
 
-  Logger.log('Fertig. Kalender, Sheet und Sync-Trigger sind bereit. Besitzer: ' + ownerEmail());
+  Logger.log('Fertig. Kalender, Sheet und Trigger (Sync, Nacht, Erinnerung) sind bereit. Besitzer: ' + ownerEmail());
 }
