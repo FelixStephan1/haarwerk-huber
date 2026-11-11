@@ -6,6 +6,7 @@
   <title>Haarwerk Huber – Friseur in Graz</title>
   <meta name="description" content="Haarwerk Huber – Ihr Friseur in Graz für Damen, Herren und Kinder. Schnitt, Farbe, Styling. Termin online buchen.">
   <link rel="preload" href="fonts/cormorant-garamond-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <script>document.documentElement.classList.add('js');</script>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -35,39 +36,44 @@
 
     <section class="hero">
       <div class="inner">
-        <span class="eyebrow">Friseur in der Grazer Innenstadt · seit 2012</span>
-        <h1>Ihr Friseur in Graz</h1>
-        <p>Schnitt, Farbe und Styling für Damen, Herren und Kinder – mit ehrlicher Beratung und Zeit für Sie.</p>
-        <div class="actions">
-          <a class="button" href="#termin">Termin online buchen</a>
-          <a class="button light" href="tel:+43316000000">Anrufen: 0316 000 000</a>
+        <div>
+          <span class="eyebrow" data-intro>Friseur in der Grazer Innenstadt · seit 2012</span>
+          <h1 data-intro style="--delay:.1s">Ihr Friseur <em>in Graz</em></h1>
+          <p data-intro style="--delay:.2s">Schnitt, Farbe und Styling für Damen, Herren und Kinder – mit ehrlicher Beratung und Zeit für Sie.</p>
+          <div class="actions" data-intro style="--delay:.3s">
+            <a class="button" href="#termin">Termin online buchen</a>
+            <a class="button secondary" href="tel:+43316000000">Anrufen: 0316 000 000</a>
+          </div>
         </div>
+        <figure class="hero-photo" data-intro style="--delay:.25s">
+          <img src="img/hero.jpg" alt="Friseurin föhnt einer Kundin die Haare mit der Rundbürste" width="1200" height="801" fetchpriority="high">
+        </figure>
       </div>
     </section>
 
     <section class="section" id="ueber-uns">
       <div class="container split">
         <div>
-          <span class="eyebrow">Über uns</span>
-          <h2>Gutes Handwerk braucht Zeit</h2>
+          <span class="eyebrow" data-reveal>Über uns</span>
+          <h2 data-reveal>Gutes Handwerk braucht Zeit</h2>
           <p class="lead">Seit 2012 schneiden, färben und stylen wir in der Grazer Innenstadt. Bei uns zählt eine ehrliche Beratung mehr als jeder Trend: Wir nehmen uns Zeit, hören zu und finden gemeinsam mit Ihnen den Schnitt, der zu Ihnen passt.</p>
           <p>Wir arbeiten mit hochwertigen, schonenden Produkten und sagen Ihnen den Preis, bevor wir anfangen. Keine Überraschungen an der Kassa.</p>
-          <div class="facts">
+          <div class="facts" data-reveal style="--delay:.1s">
             <div><strong>2012</strong><span>gegründet</span></div>
             <div><strong>3</strong><span>Friseurinnen &amp; Friseure</span></div>
             <div><strong>24/7</strong><span>online buchen</span></div>
           </div>
         </div>
-        <img src="img/ueber-uns.jpg" alt="Hände einer Friseurin beim Haareschneiden" width="900" height="1100" loading="lazy">
+        <img src="img/ueber-uns.jpg" alt="Schere schneidet langes dunkles Haar" width="800" height="1200" loading="lazy" data-reveal style="--delay:.15s">
       </div>
     </section>
 
     <section class="section alt" id="preise">
       <div class="narrow">
         <span class="eyebrow">Leistungen &amp; Preise</span>
-        <h2>Was wir für Sie tun</h2>
+        <h2 data-reveal>Was wir für Sie tun</h2>
         <p class="lead">Tippen Sie auf eine Kategorie, um die Preise zu sehen.</p>
-        <div class="accordion">
+        <div class="accordion" data-reveal>
         <details open>
           <summary>Damen <span class="from">ab € 48</span></summary>
           <div class="panel">
@@ -131,22 +137,22 @@
     <section class="section" id="team">
       <div class="container">
         <span class="eyebrow">Team</span>
-        <h2>Die Menschen hinter der Schere</h2>
+        <h2 data-reveal>Die Menschen hinter der Schere</h2>
         <p class="lead">Drei Menschen, drei Schwerpunkte – und immer jemand, der genau zu Ihrem Haar passt.</p>
         <div class="team">
-          <article class="member">
+          <article class="member" data-reveal style="--delay:0.00s">
             <div class="avatar" aria-hidden="true">MH</div>
             <h3>Maria Huber</h3>
             <p class="role">Inhaberin · Friseurmeisterin</p>
             <p>Gründete den Salon 2012. Spezialistin für Damenschnitte und Hochsteckfrisuren.</p>
           </article>
-          <article class="member">
+          <article class="member" data-reveal style="--delay:0.12s">
             <div class="avatar" aria-hidden="true">LW</div>
             <h3>Lena Wolf</h3>
             <p class="role">Coloristin</p>
             <p>Strähnen, Balayage und natürliche Farbtöne. Berät gerne auch zu Pflege nach dem Färben.</p>
           </article>
-          <article class="member">
+          <article class="member" data-reveal style="--delay:0.24s">
             <div class="avatar" aria-hidden="true">JB</div>
             <h3>Jonas Berger</h3>
             <p class="role">Herren &amp; Bart</p>
@@ -159,15 +165,15 @@
     <section class="section alt" id="galerie">
       <div class="container">
         <span class="eyebrow">Galerie</span>
-        <h2>Einblicke in den Salon</h2>
+        <h2 data-reveal>Einblicke in den Salon</h2>
         <p class="lead">Ein paar Eindrücke aus unserem Alltag.</p>
         <div class="gallery">
-          <figure><img src="img/galerie-1.jpg" alt="Salon-Innenraum mit Spiegeln und Stühlen" width="800" height="800" loading="lazy"></figure>
-          <figure><img src="img/galerie-2.jpg" alt="Werkzeug: Scheren und Kämme" width="800" height="800" loading="lazy"></figure>
-          <figure><img src="img/galerie-3.jpg" alt="Frisch gefärbte Haare von hinten" width="800" height="800" loading="lazy"></figure>
-          <figure><img src="img/galerie-4.jpg" alt="Haare werden geföhnt" width="800" height="800" loading="lazy"></figure>
-          <figure><img src="img/galerie-5.jpg" alt="Pflegeprodukte im Regal" width="800" height="800" loading="lazy"></figure>
-          <figure><img src="img/galerie-6.jpg" alt="Waschbecken im Salon" width="800" height="800" loading="lazy"></figure>
+          <figure data-reveal style="--delay:0.0s"><img src="img/galerie-1.jpg" alt="Gewellte, gesträhnte Haare von hinten" width="700" height="875" loading="lazy"></figure>
+          <figure data-reveal style="--delay:0.1s"><img src="img/galerie-2.jpg" alt="Salon mit runden Spiegeln und Friseurstühlen" width="700" height="702" loading="lazy"></figure>
+          <figure data-reveal style="--delay:0.2s"><img src="img/galerie-3.jpg" alt="Pflegeprodukte im Regal" width="700" height="467" loading="lazy"></figure>
+          <figure data-reveal style="--delay:0.0s"><img src="img/galerie-4.jpg" alt="Herrenschnitt mit Kamm und Schere" width="700" height="1120" loading="lazy"></figure>
+          <figure data-reveal style="--delay:0.1s"><img src="img/galerie-5.jpg" alt="Waschbecken im Salon" width="700" height="467" loading="lazy"></figure>
+          <figure data-reveal style="--delay:0.2s"><img src="img/galerie-6.jpg" alt="Kämme und Bürsten" width="700" height="612" loading="lazy"></figure>
         </div>
       </div>
     </section>
@@ -175,20 +181,20 @@
     <section class="section" id="bewertungen">
       <div class="container">
         <span class="eyebrow">Bewertungen</span>
-        <h2>Das sagen unsere Kundinnen und Kunden</h2>
+        <h2 data-reveal>Das sagen unsere Kundinnen und Kunden</h2>
         <p class="lead">Beispiel-Bewertungen – erfunden für dieses Übungsprojekt.</p>
         <div class="reviews">
-          <figure class="review">
+          <figure class="review" data-reveal style="--delay:0.00s">
             <div class="stars" aria-label="5 von 5 Sternen">★★★★★</div>
             <blockquote>„Endlich ein Friseur, der wirklich zuhört. Der Schnitt sitzt auch nach Wochen noch.“</blockquote>
             <figcaption>Beispiel-Bewertung · Damenschnitt</figcaption>
           </figure>
-          <figure class="review">
+          <figure class="review" data-reveal style="--delay:0.12s">
             <div class="stars" aria-label="5 von 5 Sternen">★★★★★</div>
             <blockquote>„Online gebucht, am Vorabend erinnert, pünktlich drangekommen. So einfach war's noch nie.“</blockquote>
             <figcaption>Beispiel-Bewertung · Herrenschnitt</figcaption>
           </figure>
-          <figure class="review">
+          <figure class="review" data-reveal style="--delay:0.24s">
             <div class="stars" aria-label="5 von 5 Sternen">★★★★★</div>
             <blockquote>„Die Strähnen sehen genau so natürlich aus, wie ich es mir gewünscht habe.“</blockquote>
             <figcaption>Beispiel-Bewertung · Strähnen</figcaption>
@@ -197,12 +203,15 @@
       </div>
     </section>
 
-    <section class="section alt" id="termin">
-      <div class="narrow">
-        <span class="eyebrow">Online-Termin</span>
-        <h2>Termin buchen</h2>
-        <p class="lead">Wählen Sie Leistung und Tag – Sie sehen nur Zeiten, die wirklich frei sind. Die Bestätigung kommt sofort per E-Mail.</p>
-        <div class="booking-card">
+    <section class="section alt">
+      <div class="container">
+        <div class="booking-card" id="termin">
+          <div class="booking-intro">
+            <span class="eyebrow">Online-Termin</span>
+            <h2>Termin buchen</h2>
+            <p class="lead">Sie sehen nur Zeiten, die wirklich frei sind. Die Bestätigung kommt sofort per E-Mail, am Vorabend eine Erinnerung.</p>
+            <p class="small">Di–Fr 9–18 Uhr · Sa 8–13 Uhr<br>Lieber telefonisch? <a href="tel:+43316000000">0316 000 000</a></p>
+          </div>
       <form id="booking-form">
         <label>Leistung
           <select name="service" required>
@@ -252,8 +261,8 @@
     <section class="section" id="faq">
       <div class="narrow">
         <span class="eyebrow">FAQ</span>
-        <h2>Häufige Fragen</h2>
-        <div class="accordion faq">
+        <h2 data-reveal>Häufige Fragen</h2>
+        <div class="accordion faq" data-reveal>
         <details>
           <summary>Wie kann ich meinen Termin ändern oder absagen?</summary>
           <div class="panel"><p>In Ihrer Bestätigungs-E-Mail finden Sie einen Link, mit dem Sie den Termin bis 24 Stunden vorher selbst verschieben oder stornieren können. Danach rufen Sie uns bitte an: +43 316 000 000.</p></div>
@@ -286,7 +295,7 @@
       <div class="container contact">
         <div>
           <span class="eyebrow">Kontakt</span>
-          <h2>So finden Sie uns</h2>
+          <h2 data-reveal>So finden Sie uns</h2>
           <address>
             <p>Haarwerk Huber<br>Musterstraße 12<br>8010 Graz</p>
             <p style="margin-top:1rem">
@@ -298,7 +307,7 @@
             <a class="button secondary" href="https://www.google.com/maps/search/?api=1&amp;query=Musterstra%C3%9Fe+12+8010+Graz" target="_blank" rel="noopener">Route planen ↗</a>
           </p>
         </div>
-        <div id="oeffnungszeiten">
+        <div id="oeffnungszeiten" data-reveal style="--delay:.1s">
           <h3>Öffnungszeiten</h3>
           <table>
             <tr><td>Montag</td><td>geschlossen</td></tr>
@@ -333,6 +342,24 @@
     menuButton.addEventListener('click', () => setMenu(!nav.classList.contains('open')));
     nav.addEventListener('click', (e) => { if (e.target.closest('a')) setMenu(false); }); // Link gewählt → zu
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMenu(false); });
+
+    // ── Header bekommt beim Scrollen einen Schatten ──
+    const header = document.querySelector('.site-header');
+    const onScroll = () => header.classList.toggle('scrolled', window.scrollY > 10);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    // ── Elemente weich einblenden, sobald sie ins Bild kommen ──
+    // IntersectionObserver meldet, wenn ein Element sichtbar wird – ohne bei jedem Scroll-Pixel zu rechnen.
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          revealObserver.unobserve(entry.target); // nur einmal einblenden
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    document.querySelectorAll('[data-reveal]').forEach((el) => revealObserver.observe(el));
   </script>
   <script>
     const form = document.getElementById('booking-form');

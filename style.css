@@ -69,7 +69,7 @@ h3 { font-size: 1.5rem; }
 
 /* ───────── Kopfzeile mit Menü (bleibt oben stehen) ───────── */
 .site-header {
-  position: sticky; top: 0; z-index: 50;
+  position: sticky; top: 0; z-index: 50; transition: box-shadow 0.3s;
   background: rgba(250, 247, 242, 0.96);
   border-bottom: 1px solid var(--line);
   backdrop-filter: blur(6px);
@@ -78,6 +78,7 @@ h3 { font-size: 1.5rem; }
   max-width: 1120px; margin: 0 auto; padding: 0 1.25rem; height: var(--header-h);
   display: flex; align-items: center; gap: 1.5rem;
 }
+.site-header.scrolled { box-shadow: 0 6px 20px -10px rgba(43, 38, 34, 0.35); }
 .logo { font-family: var(--serif); font-size: 1.6rem; font-weight: 600; color: var(--text); text-decoration: none; white-space: nowrap; }
 .logo span { color: var(--accent); }
 .site-nav { margin-left: auto; }
@@ -109,24 +110,27 @@ h3 { font-size: 1.5rem; }
 @media (max-width: 860px) { .site-header .inner { gap: 0.75rem; } }
 @media (max-width: 480px) { .logo { font-size: 1.35rem; } .header-cta .long { display: none; } .header-cta .short { display: inline; } }
 
-/* ───────── Hero ───────── */
-.hero {
-  position: relative; min-height: min(78vh, 640px); display: flex; align-items: flex-end;
-  background: #8c7a68 url("img/hero.jpg") center / cover no-repeat;
-  color: #fff;
+/* ───────── Hero: Text links, Foto rechts (Foto behält seine Form) ───────── */
+.hero { padding: clamp(2.5rem, 6vw, 5rem) 1.25rem; overflow: hidden; }
+.hero .inner {
+  max-width: 1120px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1fr; gap: clamp(2rem, 5vw, 4.5rem); align-items: center;
 }
-.hero::before { /* dunkler Verlauf, damit der Text auf jedem Foto lesbar bleibt */
-  content: ""; position: absolute; inset: 0;
-  background:
-    linear-gradient(90deg, rgba(43,38,34,0.55) 0%, rgba(43,38,34,0.25) 55%, rgba(43,38,34,0) 80%),
-    linear-gradient(180deg, rgba(43,38,34,0.05) 0%, rgba(43,38,34,0.25) 45%, rgba(43,38,34,0.75) 100%);
-}
-.hero .eyebrow, .hero h1, .hero p { text-shadow: 0 1px 12px rgba(0,0,0,0.35); }
-.hero .inner { position: relative; max-width: 1120px; width: 100%; margin: 0 auto; padding: 4rem 1.25rem 3.5rem; }
-.hero .eyebrow { color: #f3e2d3; }
-.hero h1 { font-size: clamp(2.8rem, 8vw, 5rem); font-weight: 500; max-width: 14ch; }
-.hero p { font-size: 1.15rem; max-width: 34rem; margin: 1rem 0 2rem; color: #f6efe7; }
+.hero h1 { font-size: clamp(2.8rem, 6.5vw, 4.6rem); font-weight: 500; }
+.hero h1 em { font-style: italic; color: var(--accent); }
+.hero p { font-size: 1.15rem; max-width: 30rem; margin: 1.25rem 0 2rem; color: var(--muted); }
 .hero .actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.hero-photo { position: relative; }
+.hero-photo img { width: 100%; height: auto; border-radius: 2px; box-shadow: 0 24px 48px -24px rgba(43, 38, 34, 0.45); }
+.hero-photo::before { /* versetzter Rahmen hinter dem Foto */
+  content: ""; position: absolute; inset: 1.25rem -1.25rem -1.25rem 1.25rem;
+  border: 1px solid var(--accent); border-radius: 2px; z-index: -1;
+}
+.hero .facts { margin-top: 2.5rem; }
+@media (max-width: 860px) {
+  .hero .inner { grid-template-columns: 1fr; }
+  .hero-photo { margin-right: 1.25rem; }
+}
 
 /* ───────── Abschnitte ───────── */
 .section { padding: clamp(3.5rem, 8vw, 6rem) 1.25rem; }
@@ -135,12 +139,12 @@ h3 { font-size: 1.5rem; }
 .narrow { max-width: 760px; margin: 0 auto; }
 
 /* Über uns: Text + Bild nebeneinander */
-.split { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: clamp(2rem, 5vw, 4rem); align-items: center; }
-.split img { aspect-ratio: 4 / 5; object-fit: cover; width: 100%; border-radius: 2px; }
+.split { display: grid; grid-template-columns: 1.4fr 0.6fr; gap: clamp(2rem, 6vw, 5rem); align-items: center; }
+.split img { width: 100%; max-width: 360px; height: auto; justify-self: end; border-radius: 2px; }
 .facts { display: flex; flex-wrap: wrap; gap: 2rem; margin-top: 2rem; }
 .facts strong { display: block; font-family: var(--serif); font-size: 2.2rem; font-weight: 600; color: var(--accent); line-height: 1; }
 .facts span { color: var(--muted); font-size: 0.9rem; }
-@media (max-width: 760px) { .split { grid-template-columns: 1fr; } .split img { aspect-ratio: 4 / 3; } }
+@media (max-width: 760px) { .split { grid-template-columns: 1fr; } .split img { max-width: 280px; justify-self: start; } }
 
 /* Preise: Aufklapp-Liste (details/summary) */
 .accordion { border-top: 1px solid var(--line); }
@@ -178,7 +182,8 @@ h3 { font-size: 1.5rem; }
 
 /* Team */
 .team { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; }
-.member { background: var(--bg); border: 1px solid var(--line); padding: 2rem 1.5rem; text-align: center; }
+.member { background: var(--bg); border: 1px solid var(--line); padding: 2rem 1.5rem; text-align: center; transition: transform 0.3s, box-shadow 0.3s; }
+.member:hover { transform: translateY(-4px); box-shadow: 0 16px 32px -20px rgba(43, 38, 34, 0.4); }
 .avatar {
   width: 96px; height: 96px; margin: 0 auto 1.25rem; border-radius: 50%;
   display: grid; place-items: center;
@@ -190,9 +195,11 @@ h3 { font-size: 1.5rem; }
 .member p:last-child { color: var(--muted); font-size: 0.95rem; }
 
 /* Galerie */
-.gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
-.gallery img { aspect-ratio: 1; object-fit: cover; width: 100%; background: var(--line); }
-@media (max-width: 640px) { .gallery { grid-template-columns: 1fr 1fr; } }
+.gallery { columns: 4 220px; column-gap: 1rem; }
+.gallery figure { break-inside: avoid; margin-bottom: 1rem; overflow: hidden; border-radius: 2px; background: var(--line); }
+.gallery img { width: 100%; height: auto; transition: transform 0.6s cubic-bezier(.2,.7,.2,1); }
+.gallery figure:hover img { transform: scale(1.04); }
+@media (max-width: 640px) { .gallery { columns: 2; column-gap: 0.75rem; } .gallery figure { margin-bottom: 0.75rem; } }
 
 /* Bewertungen */
 .reviews { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; }
@@ -227,7 +234,12 @@ form button:disabled { opacity: 0.6; cursor: wait; }
 #form-status { min-height: 1.5rem; }
 #form-status.ok { color: #2f6b3a; }
 #form-status.error { color: #a33a2a; }
-.booking-card { background: #fff; border: 1px solid var(--line); padding: clamp(1.5rem, 4vw, 2.5rem); }
+.booking-card { background: #fff; border: 1px solid var(--line); padding: clamp(1.5rem, 4vw, 2.25rem); box-shadow: 0 20px 40px -28px rgba(43, 38, 34, 0.35); }
+.booking-card { display: grid; grid-template-columns: 0.75fr 1.25fr; gap: clamp(1.5rem, 4vw, 3rem); align-items: start; }
+@media (max-width: 860px) { .booking-card { grid-template-columns: 1fr; gap: 0.5rem; } .booking-intro .small { display: none; } }
+.booking-card h2 { font-size: clamp(1.9rem, 4vw, 2.3rem); }
+.booking-card .lead { margin-bottom: 1.25rem; font-size: 0.95rem; }
+#termin.section { padding-top: clamp(2.5rem, 6vw, 4rem); }
 
 /* ───────── Fußzeile ───────── */
 .site-footer { background: var(--text); color: #d9cfc4; text-align: center; font-size: 0.9rem; padding: 2.5rem 1.25rem; }
@@ -259,3 +271,33 @@ button.button { font-size: 1rem; }
 .legal p, .legal ul { margin-bottom: 1rem; }
 .legal ul { padding-left: 1.25rem; }
 .fictional { background: var(--bg-alt); border-left: 3px solid var(--accent); padding: 0.75rem 1rem; font-size: 0.9rem; margin-bottom: 2rem; }
+
+/* ───────── Bewegung ───────── */
+/* Aufklappen der Preise/FAQ weich animieren (Chrome/Edge; andere Browser klappen einfach auf) */
+:root { interpolate-size: allow-keywords; }
+.accordion details::details-content {
+  height: 0; overflow: clip;
+  transition: height 0.35s ease, content-visibility 0.35s allow-discrete;
+}
+.accordion details[open]::details-content { height: auto; }
+
+/* Beim Scrollen weich einblenden. Nur wenn JavaScript läuft (Klasse "js" am <html>),
+   sonst bleibt alles sichtbar. */
+.js [data-reveal] {
+  opacity: 0; transform: translateY(28px);
+  transition: opacity 0.8s ease, transform 0.8s cubic-bezier(.2,.7,.2,1);
+  transition-delay: var(--delay, 0s);
+}
+.js [data-reveal].visible { opacity: 1; transform: none; }
+
+/* Hero beim Laden: Text und Foto kommen nacheinander */
+.js .hero [data-intro] { opacity: 0; transform: translateY(18px); animation: intro 0.9s cubic-bezier(.2,.7,.2,1) forwards; animation-delay: var(--delay, 0s); }
+.js .hero .hero-photo[data-intro] { transform: translateY(0) scale(0.97); }
+@keyframes intro { to { opacity: 1; transform: none; } }
+
+/* Wer in den Systemeinstellungen "Bewegung reduzieren" an hat, bekommt keine Effekte */
+@media (prefers-reduced-motion: reduce) {
+  .js [data-reveal], .js .hero [data-intro] { opacity: 1; transform: none; transition: none; animation: none; }
+  .gallery img, .member { transition: none; }
+  .accordion details::details-content { transition: none; }
+}
