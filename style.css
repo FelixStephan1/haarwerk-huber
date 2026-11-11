@@ -117,8 +117,11 @@ h3 { font-size: 1.5rem; }
 }
 .hero::before { /* dunkler Verlauf, damit der Text auf jedem Foto lesbar bleibt */
   content: ""; position: absolute; inset: 0;
-  background: linear-gradient(180deg, rgba(43,38,34,0.05) 0%, rgba(43,38,34,0.25) 45%, rgba(43,38,34,0.75) 100%);
+  background:
+    linear-gradient(90deg, rgba(43,38,34,0.55) 0%, rgba(43,38,34,0.25) 55%, rgba(43,38,34,0) 80%),
+    linear-gradient(180deg, rgba(43,38,34,0.05) 0%, rgba(43,38,34,0.25) 45%, rgba(43,38,34,0.75) 100%);
 }
+.hero .eyebrow, .hero h1, .hero p { text-shadow: 0 1px 12px rgba(0,0,0,0.35); }
 .hero .inner { position: relative; max-width: 1120px; width: 100%; margin: 0 auto; padding: 4rem 1.25rem 3.5rem; }
 .hero .eyebrow { color: #f3e2d3; }
 .hero h1 { font-size: clamp(2.8rem, 8vw, 5rem); font-weight: 500; max-width: 14ch; }
