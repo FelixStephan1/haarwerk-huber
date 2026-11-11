@@ -1,109 +1,258 @@
-/* Haarwerk Huber – gemeinsame Styles für alle Seiten */
+/* Haarwerk Huber – gemeinsame Styles für alle Seiten
+   Richtung A "warm & klassisch": Creme, Kupfer, Dunkelbraun; Cormorant Garamond + Lato.
+   Schriften liegen im Ordner fonts/ (selbst gehostet, keine Verbindung zu Google → DSGVO). */
+
+@font-face { font-family: "Cormorant Garamond"; font-weight: 500; font-style: normal; font-display: swap;
+  src: url("fonts/cormorant-garamond-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "Cormorant Garamond"; font-weight: 600; font-style: normal; font-display: swap;
+  src: url("fonts/cormorant-garamond-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Cormorant Garamond"; font-weight: 500; font-style: italic; font-display: swap;
+  src: url("fonts/cormorant-garamond-latin-500-italic.woff2") format("woff2"); }
+@font-face { font-family: "Lato"; font-weight: 400; font-style: normal; font-display: swap;
+  src: url("fonts/lato-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Lato"; font-weight: 700; font-style: normal; font-display: swap;
+  src: url("fonts/lato-latin-700-normal.woff2") format("woff2"); }
+
 :root {
   --bg: #faf7f2;
+  --bg-alt: #f3ece2;
   --text: #2b2622;
   --muted: #6f655c;
   --accent: #8a5a3c;
+  --accent-dark: #6f4630;
   --line: #e4dcd0;
+  --serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --sans: "Lato", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --header-h: 4.25rem;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; scroll-padding-top: calc(var(--header-h) + 1rem); }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 body {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--sans);
   background: var(--bg);
   color: var(--text);
-  line-height: 1.6;
+  line-height: 1.65;
+  font-size: 1.0625rem;
 }
+img { max-width: 100%; display: block; }
+a { color: var(--accent); }
+h1, h2, h3 { font-family: var(--serif); font-weight: 500; line-height: 1.15; }
+h2 { font-size: clamp(2rem, 5vw, 2.75rem); color: var(--text); margin-bottom: 0.5rem; }
+h3 { font-size: 1.5rem; }
+.eyebrow {
+  font-family: var(--sans); font-size: 0.8rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 0.5rem; display: block;
+}
+.lead { color: var(--muted); max-width: 38rem; margin-bottom: 2rem; }
+.small { color: var(--muted); font-size: 0.9rem; margin-top: 1rem; }
+
 .notice {
-  background: var(--text);
-  color: var(--bg);
-  text-align: center;
-  font-family: system-ui, sans-serif;
-  font-size: 0.85rem;
-  padding: 0.5rem 1rem;
+  background: var(--text); color: var(--bg); text-align: center;
+  font-size: 0.85rem; padding: 0.45rem 1rem;
 }
-header {
-  text-align: center;
-  padding: 5rem 1.5rem 4rem;
-  border-bottom: 1px solid var(--line);
-}
-header h1 {
-  font-size: clamp(2.5rem, 7vw, 4.5rem);
-  font-weight: normal;
-  letter-spacing: 0.02em;
-}
-header p {
-  color: var(--muted);
-  font-size: 1.15rem;
-  margin-top: 0.5rem;
-}
+
+/* ───────── Buttons ───────── */
 .button {
-  display: inline-block;
-  margin-top: 2rem;
-  padding: 0.8rem 2rem;
-  background: var(--accent);
+  display: inline-block; padding: 0.85rem 1.8rem; min-height: 44px;
+  background: var(--accent); color: #fff; text-decoration: none;
+  font-family: var(--sans); font-size: 1rem; font-weight: 700; letter-spacing: 0.02em;
+  border: 1px solid var(--accent); border-radius: 2px; cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.button:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
+.button.secondary, .button.ghost { background: transparent; color: var(--accent); }
+.button.secondary:hover, .button.ghost:hover { background: var(--accent); color: #fff; }
+.button.light { background: transparent; color: #fff; border-color: rgba(255,255,255,0.8); }
+.button.light:hover { background: #fff; color: var(--text); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* ───────── Kopfzeile mit Menü (bleibt oben stehen) ───────── */
+.site-header {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(250, 247, 242, 0.96);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(6px);
+}
+.site-header .inner {
+  max-width: 1120px; margin: 0 auto; padding: 0 1.25rem; height: var(--header-h);
+  display: flex; align-items: center; gap: 1.5rem;
+}
+.logo { font-family: var(--serif); font-size: 1.6rem; font-weight: 600; color: var(--text); text-decoration: none; white-space: nowrap; }
+.logo span { color: var(--accent); }
+.site-nav { margin-left: auto; }
+.site-nav ul { list-style: none; display: flex; gap: 1.75rem; }
+.site-nav a { color: var(--text); text-decoration: none; font-size: 0.95rem; padding: 0.5rem 0; }
+.site-nav a:hover { color: var(--accent); }
+.header-cta .short { display: none; }
+.header-cta { padding: 0.6rem 1.2rem; font-size: 0.9rem; white-space: nowrap; min-height: 0; }
+.menu-toggle {
+  display: none; margin-left: auto; background: none; border: 1px solid var(--line); border-radius: 2px;
+  width: 44px; height: 44px; cursor: pointer; color: var(--text); font-size: 1.4rem; line-height: 1;
+}
+
+/* Handy: Menü wird zum Aufklappmenü (☰) */
+@media (max-width: 860px) {
+  .menu-toggle { display: block; }
+  .header-cta { padding: 0.55rem 0.9rem; }
+  .site-nav {
+    position: absolute; top: var(--header-h); left: 0; right: 0; margin: 0;
+    background: var(--bg); border-bottom: 1px solid var(--line);
+    box-shadow: 0 12px 24px rgba(43, 38, 34, 0.08);
+    display: none;
+  }
+  .site-nav.open { display: block; }
+  .site-nav ul { flex-direction: column; gap: 0; padding: 0.5rem 1.25rem 1rem; }
+  .site-nav a { display: block; padding: 0.85rem 0; border-bottom: 1px solid var(--line); font-size: 1.05rem; }
+  .site-nav li:last-child a { border-bottom: none; }
+}
+@media (max-width: 860px) { .site-header .inner { gap: 0.75rem; } }
+@media (max-width: 480px) { .logo { font-size: 1.35rem; } .header-cta .long { display: none; } .header-cta .short { display: inline; } }
+
+/* ───────── Hero ───────── */
+.hero {
+  position: relative; min-height: min(78vh, 640px); display: flex; align-items: flex-end;
+  background: #8c7a68 url("img/hero.jpg") center / cover no-repeat;
   color: #fff;
-  text-decoration: none;
-  font-family: system-ui, sans-serif;
-  border-radius: 2px;
 }
-main { max-width: 760px; margin: 0 auto; padding: 0 1.5rem; }
-section { padding: 3.5rem 0; border-bottom: 1px solid var(--line); }
-section:last-child { border-bottom: none; }
-h2 {
-  font-weight: normal;
-  font-size: 1.8rem;
-  margin-bottom: 1.5rem;
-  color: var(--accent);
+.hero::before { /* dunkler Verlauf, damit der Text auf jedem Foto lesbar bleibt */
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(43,38,34,0.05) 0%, rgba(43,38,34,0.25) 45%, rgba(43,38,34,0.75) 100%);
 }
+.hero .inner { position: relative; max-width: 1120px; width: 100%; margin: 0 auto; padding: 4rem 1.25rem 3.5rem; }
+.hero .eyebrow { color: #f3e2d3; }
+.hero h1 { font-size: clamp(2.8rem, 8vw, 5rem); font-weight: 500; max-width: 14ch; }
+.hero p { font-size: 1.15rem; max-width: 34rem; margin: 1rem 0 2rem; color: #f6efe7; }
+.hero .actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+
+/* ───────── Abschnitte ───────── */
+.section { padding: clamp(3.5rem, 8vw, 6rem) 1.25rem; }
+.section.alt { background: var(--bg-alt); }
+.container { max-width: 1120px; margin: 0 auto; }
+.narrow { max-width: 760px; margin: 0 auto; }
+
+/* Über uns: Text + Bild nebeneinander */
+.split { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: clamp(2rem, 5vw, 4rem); align-items: center; }
+.split img { aspect-ratio: 4 / 5; object-fit: cover; width: 100%; border-radius: 2px; }
+.facts { display: flex; flex-wrap: wrap; gap: 2rem; margin-top: 2rem; }
+.facts strong { display: block; font-family: var(--serif); font-size: 2.2rem; font-weight: 600; color: var(--accent); line-height: 1; }
+.facts span { color: var(--muted); font-size: 0.9rem; }
+@media (max-width: 760px) { .split { grid-template-columns: 1fr; } .split img { aspect-ratio: 4 / 3; } }
+
+/* Preise: Aufklapp-Liste (details/summary) */
+.accordion { border-top: 1px solid var(--line); }
+.accordion details { border-bottom: 1px solid var(--line); }
+.accordion summary {
+  list-style: none; cursor: pointer; min-height: 44px;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: 1.15rem 0.25rem; font-family: var(--serif); font-size: 1.6rem; font-weight: 500;
+}
+.accordion summary::-webkit-details-marker { display: none; }
+.accordion summary::after {
+  content: "+"; font-family: var(--sans); font-size: 1.5rem; color: var(--accent);
+  transition: transform 0.2s;
+}
+.accordion details[open] summary::after { transform: rotate(45deg); }
+.accordion summary .from { font-family: var(--sans); font-size: 0.9rem; color: var(--muted); margin-left: auto; margin-right: 0.75rem; }
+.accordion .panel { padding: 0 0.25rem 1.25rem; }
+.price-row {
+  display: grid; grid-template-columns: 1fr auto auto; align-items: baseline; gap: 0.5rem 1rem;
+  padding: 0.75rem 0; border-bottom: 1px dotted var(--line);
+}
+.price-row:last-child { border-bottom: none; }
+.price-row .name { font-weight: 700; }
+.price-row .meta { display: block; color: var(--muted); font-size: 0.85rem; font-weight: 400; }
+.price-row .price { white-space: nowrap; }
+.price-row .book { font-size: 0.85rem; white-space: nowrap; }
+@media (max-width: 520px) {
+  .price-row { grid-template-columns: 1fr auto; }
+  .price-row .book { grid-column: 1 / -1; }
+}
+
+/* FAQ nutzt dieselbe Aufklapp-Optik, nur kleiner */
+.accordion.faq summary { font-family: var(--sans); font-size: 1.05rem; font-weight: 700; }
+.accordion.faq .panel p { color: var(--muted); max-width: 44rem; }
+
+/* Team */
+.team { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; }
+.member { background: var(--bg); border: 1px solid var(--line); padding: 2rem 1.5rem; text-align: center; }
+.avatar {
+  width: 96px; height: 96px; margin: 0 auto 1.25rem; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--accent); color: #fff; font-family: var(--serif); font-size: 2.2rem; font-weight: 600;
+}
+.member:nth-child(2) .avatar { background: #a77a5c; }
+.member:nth-child(3) .avatar { background: #5e4a3c; }
+.member .role { color: var(--accent); font-size: 0.85rem; letter-spacing: 0.12em; text-transform: uppercase; margin: 0.25rem 0 0.75rem; }
+.member p:last-child { color: var(--muted); font-size: 0.95rem; }
+
+/* Galerie */
+.gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+.gallery img { aspect-ratio: 1; object-fit: cover; width: 100%; background: var(--line); }
+@media (max-width: 640px) { .gallery { grid-template-columns: 1fr 1fr; } }
+
+/* Bewertungen */
+.reviews { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; }
+.review { border-left: 3px solid var(--accent); padding: 0.25rem 0 0.25rem 1.25rem; }
+.review blockquote { font-family: var(--serif); font-style: italic; font-size: 1.35rem; line-height: 1.4; }
+.review figcaption { color: var(--muted); font-size: 0.9rem; margin-top: 0.75rem; }
+.stars { color: var(--accent); letter-spacing: 0.15em; font-size: 0.95rem; margin-bottom: 0.5rem; }
+
+/* Kontakt + Öffnungszeiten */
+.contact { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; }
+@media (max-width: 700px) { .contact { grid-template-columns: 1fr; } }
+.contact h3 { margin-bottom: 0.75rem; }
+.contact address { font-style: normal; }
+
+/* ───────── Tabellen, Formular (auch termin.html) ───────── */
 table { width: 100%; border-collapse: collapse; }
 td { padding: 0.6rem 0; border-bottom: 1px dotted var(--line); }
 td:last-child { text-align: right; white-space: nowrap; }
-.small { color: var(--muted); font-size: 0.9rem; margin-top: 1rem; }
-footer {
-  text-align: center;
-  font-family: system-ui, sans-serif;
-  font-size: 0.85rem;
-  color: var(--muted);
-  padding: 2rem 1rem 3rem;
-}
-form { display: grid; gap: 1rem; font-family: system-ui, sans-serif; }
+form { display: grid; gap: 1rem; }
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 @media (max-width: 560px) { .row { grid-template-columns: 1fr; } }
 label { display: grid; gap: 0.3rem; font-size: 0.9rem; color: var(--muted); }
 input, select, textarea {
-  font: inherit; color: var(--text); background: #fff;
+  font: inherit; color: var(--text); background: #fff; min-height: 44px;
   border: 1px solid var(--line); border-radius: 2px; padding: 0.65rem 0.75rem;
 }
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
 textarea { min-height: 5rem; resize: vertical; }
-form button { border: none; cursor: pointer; font-size: 1rem; justify-self: start; margin-top: 0.5rem; }
+form button { justify-self: start; margin-top: 0.5rem; }
 form button:disabled { opacity: 0.6; cursor: wait; }
 .hp { position: absolute; left: -9999px; }
-#form-status { min-height: 1.5rem; font-family: system-ui, sans-serif; }
+#form-status { min-height: 1.5rem; }
 #form-status.ok { color: #2f6b3a; }
 #form-status.error { color: #a33a2a; }
+.booking-card { background: #fff; border: 1px solid var(--line); padding: clamp(1.5rem, 4vw, 2.5rem); }
 
-/* termin.html – Termin verwalten */
-header.small-header { padding: 2.5rem 1.5rem 2rem; }
-header.small-header h1 { font-size: clamp(2rem, 5vw, 2.8rem); }
+/* ───────── Fußzeile ───────── */
+.site-footer { background: var(--text); color: #d9cfc4; text-align: center; font-size: 0.9rem; padding: 2.5rem 1.25rem; }
+.site-footer a { color: inherit; }
+.site-footer .logo { color: #fff; display: inline-block; margin-bottom: 0.5rem; }
+
+/* ───────── Unterseiten (termin.html, Impressum, Datenschutz) ───────── */
+header.small-header { text-align: center; padding: 2.5rem 1.5rem 2rem; border-bottom: 1px solid var(--line); }
+header.small-header h1 { font-size: clamp(2.2rem, 5vw, 3rem); font-weight: 600; }
 header.small-header a { color: inherit; text-decoration: none; }
+header.small-header p { color: var(--muted); margin-top: 0.25rem; }
+/* nur auf den Unterseiten (body class="subpage"), nicht auf der Startseite */
+.subpage > main { max-width: 760px; margin: 0 auto; padding: 0 1.5rem; }
+.subpage > main > section { padding: 3rem 0; }
+.subpage > main h2 { font-size: 1.9rem; margin-bottom: 1rem; }
+.subpage > footer { text-align: center; font-size: 0.85rem; color: var(--muted); padding: 2rem 1rem 3rem; }
+.subpage > footer a { color: inherit; }
 .details { width: 100%; margin: 1rem 0 2rem; }
 .details td:first-child { color: var(--muted); width: 35%; }
 .details td:last-child { text-align: left; white-space: normal; }
 .actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
-.button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
-button.button { border: none; cursor: pointer; font-size: 1rem; margin-top: 0; }
-button.button.secondary { border: 1px solid var(--accent); }
+button.button { font-size: 1rem; }
 .hidden { display: none !important; }
 #move-form { margin-top: 2rem; }
-.badge { display: inline-block; font-family: system-ui, sans-serif; font-size: 0.85rem; padding: 0.15rem 0.6rem; border-radius: 2px; background: var(--line); }
+.badge { display: inline-block; font-size: 0.85rem; padding: 0.15rem 0.6rem; border-radius: 2px; background: var(--line); }
 .badge.cancelled { background: #f3d9d4; color: #a33a2a; }
-
-main a { color: var(--accent); }
-
-/* Impressum / Datenschutz */
-.legal h2 { font-size: 1.4rem; margin: 2rem 0 0.75rem; }
+.legal h2 { font-size: 1.5rem; margin: 2rem 0 0.75rem; }
 .legal h2:first-child { margin-top: 0; }
 .legal p, .legal ul { margin-bottom: 1rem; }
 .legal ul { padding-left: 1.25rem; }
-.fictional { background: #f3ece2; border-left: 3px solid var(--accent); padding: 0.75rem 1rem; font-family: system-ui, sans-serif; font-size: 0.9rem; margin-bottom: 2rem; }
-footer a { color: inherit; }
+.fictional { background: var(--bg-alt); border-left: 3px solid var(--accent); padding: 0.75rem 1rem; font-size: 0.9rem; margin-bottom: 2rem; }

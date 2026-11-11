@@ -4,52 +4,204 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Haarwerk Huber – Friseur in Graz</title>
-  <meta name="description" content="Haarwerk Huber – Ihr Friseur in Graz für Damen, Herren und Kinder. Schnitt, Farbe, Styling.">
+  <meta name="description" content="Haarwerk Huber – Ihr Friseur in Graz für Damen, Herren und Kinder. Schnitt, Farbe, Styling. Termin online buchen.">
+  <link rel="preload" href="fonts/cormorant-garamond-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
   <div class="notice">Übungsprojekt – dieser Friseursalon ist erfunden.</div>
 
-  <header>
-    <h1>Haarwerk Huber</h1>
-    <p>Ihr Friseur in Graz – für Damen, Herren und Kinder</p>
-    <a class="button" href="#termin">Termin vereinbaren</a>
+  <header class="site-header">
+    <div class="inner">
+      <a class="logo" href="#top">Haarwerk <span>Huber</span></a>
+      <nav class="site-nav" id="site-nav" aria-label="Hauptmenü">
+        <ul>
+          <li><a href="#ueber-uns">Über uns</a></li>
+          <li><a href="#preise">Leistungen &amp; Preise</a></li>
+          <li><a href="#team">Team</a></li>
+          <li><a href="#galerie">Galerie</a></li>
+          <li><a href="#faq">FAQ</a></li>
+          <li><a href="#kontakt">Kontakt</a></li>
+        </ul>
+      </nav>
+      <button class="menu-toggle" type="button" aria-controls="site-nav" aria-expanded="false" aria-label="Menü öffnen">☰</button>
+      <a class="button header-cta" href="#termin"><span class="long">Termin buchen</span><span class="short">Buchen</span></a>
+    </div>
   </header>
 
-  <main>
+  <main id="top">
 
-    <section id="ueber-uns">
-      <h2>Über uns</h2>
-      <p>Seit 2012 schneiden, färben und stylen wir in der Grazer Innenstadt. Bei uns zählt eine ehrliche Beratung mehr als jeder Trend: Wir nehmen uns Zeit, hören zu und finden gemeinsam mit Ihnen den Schnitt, der zu Ihnen passt.</p>
+    <section class="hero">
+      <div class="inner">
+        <span class="eyebrow">Friseur in der Grazer Innenstadt · seit 2012</span>
+        <h1>Ihr Friseur in Graz</h1>
+        <p>Schnitt, Farbe und Styling für Damen, Herren und Kinder – mit ehrlicher Beratung und Zeit für Sie.</p>
+        <div class="actions">
+          <a class="button" href="#termin">Termin online buchen</a>
+          <a class="button light" href="tel:+43316000000">Anrufen: 0316 000 000</a>
+        </div>
+      </div>
     </section>
 
-    <section id="preise">
-      <h2>Leistungen &amp; Preise</h2>
-      <table>
-        <tr><td>Damen – Waschen, Schneiden, Föhnen</td><td>ab € 48</td></tr>
-        <tr><td>Herren – Waschen, Schneiden, Styling</td><td>€ 29</td></tr>
-        <tr><td>Kinder bis 12 Jahre</td><td>€ 18</td></tr>
-        <tr><td>Färben (Ansatz)</td><td>ab € 45</td></tr>
-        <tr><td>Strähnen</td><td>ab € 65</td></tr>
-        <tr><td>Bart trimmen</td><td>€ 15</td></tr>
-        <tr><td>Hochsteckfrisur</td><td>ab € 55</td></tr>
-      </table>
-      <p class="small">Preise inkl. MwSt. Der genaue Preis hängt von Haarlänge und Aufwand ab – wir sagen ihn Ihnen vorher.</p>
+    <section class="section" id="ueber-uns">
+      <div class="container split">
+        <div>
+          <span class="eyebrow">Über uns</span>
+          <h2>Gutes Handwerk braucht Zeit</h2>
+          <p class="lead">Seit 2012 schneiden, färben und stylen wir in der Grazer Innenstadt. Bei uns zählt eine ehrliche Beratung mehr als jeder Trend: Wir nehmen uns Zeit, hören zu und finden gemeinsam mit Ihnen den Schnitt, der zu Ihnen passt.</p>
+          <p>Wir arbeiten mit hochwertigen, schonenden Produkten und sagen Ihnen den Preis, bevor wir anfangen. Keine Überraschungen an der Kassa.</p>
+          <div class="facts">
+            <div><strong>2012</strong><span>gegründet</span></div>
+            <div><strong>3</strong><span>Friseurinnen &amp; Friseure</span></div>
+            <div><strong>24/7</strong><span>online buchen</span></div>
+          </div>
+        </div>
+        <img src="img/ueber-uns.jpg" alt="Hände einer Friseurin beim Haareschneiden" width="900" height="1100" loading="lazy">
+      </div>
     </section>
 
-    <section id="oeffnungszeiten">
-      <h2>Öffnungszeiten</h2>
-      <table>
-        <tr><td>Montag</td><td>geschlossen</td></tr>
-        <tr><td>Dienstag – Freitag</td><td>9:00 – 18:00</td></tr>
-        <tr><td>Samstag</td><td>8:00 – 13:00</td></tr>
-        <tr><td>Sonntag</td><td>geschlossen</td></tr>
-      </table>
+    <section class="section alt" id="preise">
+      <div class="narrow">
+        <span class="eyebrow">Leistungen &amp; Preise</span>
+        <h2>Was wir für Sie tun</h2>
+        <p class="lead">Tippen Sie auf eine Kategorie, um die Preise zu sehen.</p>
+        <div class="accordion">
+        <details open>
+          <summary>Damen <span class="from">ab € 48</span></summary>
+          <div class="panel">
+            <div class="price-row">
+              <span class="name">Waschen, Schneiden, Föhnen<span class="meta">ca. 60 Min. · Preis je nach Haarlänge</span></span>
+              <span class="price">ab € 48</span>
+              <a class="book" href="#termin" data-service="Damen – Waschen, Schneiden, Föhnen">Termin buchen →</a>
+            </div>
+            <div class="price-row">
+              <span class="name">Hochsteckfrisur<span class="meta">ca. 60 Min. · Hochzeit, Ball, Feier</span></span>
+              <span class="price">ab € 55</span>
+              <a class="book" href="#termin" data-service="Hochsteckfrisur">Termin buchen →</a>
+            </div>
+          </div>
+        </details>
+        <details>
+          <summary>Herren <span class="from">ab € 15</span></summary>
+          <div class="panel">
+            <div class="price-row">
+              <span class="name">Waschen, Schneiden, Styling<span class="meta">ca. 30 Min.</span></span>
+              <span class="price">€ 29</span>
+              <a class="book" href="#termin" data-service="Herren – Waschen, Schneiden, Styling">Termin buchen →</a>
+            </div>
+            <div class="price-row">
+              <span class="name">Bart trimmen<span class="meta">ca. 15 Min. · Konturen und Pflege</span></span>
+              <span class="price">€ 15</span>
+              <a class="book" href="#termin" data-service="Bart trimmen">Termin buchen →</a>
+            </div>
+          </div>
+        </details>
+        <details>
+          <summary>Kinder <span class="from">€ 18</span></summary>
+          <div class="panel">
+            <div class="price-row">
+              <span class="name">Kinderschnitt bis 12 Jahre<span class="meta">ca. 30 Min. · mit viel Geduld</span></span>
+              <span class="price">€ 18</span>
+              <a class="book" href="#termin" data-service="Kinder bis 12 Jahre">Termin buchen →</a>
+            </div>
+          </div>
+        </details>
+        <details>
+          <summary>Farbe <span class="from">ab € 45</span></summary>
+          <div class="panel">
+            <div class="price-row">
+              <span class="name">Färben (Ansatz)<span class="meta">ca. 90 Min. · inkl. Pflege</span></span>
+              <span class="price">ab € 45</span>
+              <a class="book" href="#termin" data-service="Färben (Ansatz)">Termin buchen →</a>
+            </div>
+            <div class="price-row">
+              <span class="name">Strähnen<span class="meta">ca. 120 Min. · Folien- oder Balayage-Technik</span></span>
+              <span class="price">ab € 65</span>
+              <a class="book" href="#termin" data-service="Strähnen">Termin buchen →</a>
+            </div>
+          </div>
+        </details>
+        </div>
+        <p class="small">Preise inkl. MwSt. Der genaue Preis hängt von Haarlänge und Aufwand ab – wir sagen ihn Ihnen vorher.</p>
+      </div>
     </section>
 
-    <section id="termin">
-      <h2>Termin buchen</h2>
+    <section class="section" id="team">
+      <div class="container">
+        <span class="eyebrow">Team</span>
+        <h2>Die Menschen hinter der Schere</h2>
+        <p class="lead">Drei Menschen, drei Schwerpunkte – und immer jemand, der genau zu Ihrem Haar passt.</p>
+        <div class="team">
+          <article class="member">
+            <div class="avatar" aria-hidden="true">MH</div>
+            <h3>Maria Huber</h3>
+            <p class="role">Inhaberin · Friseurmeisterin</p>
+            <p>Gründete den Salon 2012. Spezialistin für Damenschnitte und Hochsteckfrisuren.</p>
+          </article>
+          <article class="member">
+            <div class="avatar" aria-hidden="true">LW</div>
+            <h3>Lena Wolf</h3>
+            <p class="role">Coloristin</p>
+            <p>Strähnen, Balayage und natürliche Farbtöne. Berät gerne auch zu Pflege nach dem Färben.</p>
+          </article>
+          <article class="member">
+            <div class="avatar" aria-hidden="true">JB</div>
+            <h3>Jonas Berger</h3>
+            <p class="role">Herren &amp; Bart</p>
+            <p>Klassische und moderne Herrenschnitte, Bartpflege und Kinderschnitte.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt" id="galerie">
+      <div class="container">
+        <span class="eyebrow">Galerie</span>
+        <h2>Einblicke in den Salon</h2>
+        <p class="lead">Ein paar Eindrücke aus unserem Alltag.</p>
+        <div class="gallery">
+          <figure><img src="img/galerie-1.jpg" alt="Salon-Innenraum mit Spiegeln und Stühlen" width="800" height="800" loading="lazy"></figure>
+          <figure><img src="img/galerie-2.jpg" alt="Werkzeug: Scheren und Kämme" width="800" height="800" loading="lazy"></figure>
+          <figure><img src="img/galerie-3.jpg" alt="Frisch gefärbte Haare von hinten" width="800" height="800" loading="lazy"></figure>
+          <figure><img src="img/galerie-4.jpg" alt="Haare werden geföhnt" width="800" height="800" loading="lazy"></figure>
+          <figure><img src="img/galerie-5.jpg" alt="Pflegeprodukte im Regal" width="800" height="800" loading="lazy"></figure>
+          <figure><img src="img/galerie-6.jpg" alt="Waschbecken im Salon" width="800" height="800" loading="lazy"></figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="bewertungen">
+      <div class="container">
+        <span class="eyebrow">Bewertungen</span>
+        <h2>Das sagen unsere Kundinnen und Kunden</h2>
+        <p class="lead">Beispiel-Bewertungen – erfunden für dieses Übungsprojekt.</p>
+        <div class="reviews">
+          <figure class="review">
+            <div class="stars" aria-label="5 von 5 Sternen">★★★★★</div>
+            <blockquote>„Endlich ein Friseur, der wirklich zuhört. Der Schnitt sitzt auch nach Wochen noch.“</blockquote>
+            <figcaption>Beispiel-Bewertung · Damenschnitt</figcaption>
+          </figure>
+          <figure class="review">
+            <div class="stars" aria-label="5 von 5 Sternen">★★★★★</div>
+            <blockquote>„Online gebucht, am Vorabend erinnert, pünktlich drangekommen. So einfach war's noch nie.“</blockquote>
+            <figcaption>Beispiel-Bewertung · Herrenschnitt</figcaption>
+          </figure>
+          <figure class="review">
+            <div class="stars" aria-label="5 von 5 Sternen">★★★★★</div>
+            <blockquote>„Die Strähnen sehen genau so natürlich aus, wie ich es mir gewünscht habe.“</blockquote>
+            <figcaption>Beispiel-Bewertung · Strähnen</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt" id="termin">
+      <div class="narrow">
+        <span class="eyebrow">Online-Termin</span>
+        <h2>Termin buchen</h2>
+        <p class="lead">Wählen Sie Leistung und Tag – Sie sehen nur Zeiten, die wirklich frei sind. Die Bestätigung kommt sofort per E-Mail.</p>
+        <div class="booking-card">
       <form id="booking-form">
         <label>Leistung
           <select name="service" required>
@@ -91,27 +243,96 @@
         <button type="submit" class="button">Termin buchen</button>
         <p id="form-status" role="status"></p>
       </form>
-      <p class="small">Geöffnet Di–Fr 9–18 Uhr, Sa 8–13 Uhr. Ihre Angaben verwenden wir nur für die Terminvergabe – mehr dazu in der <a href="datenschutz.html">Datenschutzerklärung</a>.</p>
+        </div>
+        <p class="small">Geöffnet Di–Fr 9–18 Uhr, Sa 8–13 Uhr. Ihre Angaben verwenden wir nur für die Terminvergabe – mehr dazu in der <a href="datenschutz.html">Datenschutzerklärung</a>.</p>
+      </div>
     </section>
 
-    <section id="kontakt">
-      <h2>Kontakt</h2>
-      <p>Haarwerk Huber<br>
-         Musterstraße 12<br>
-         8010 Graz</p>
-      <p style="margin-top:1rem">
-        Telefon: +43 316 000 000<br>
-        E-Mail: termin@haarwerk-huber.at
-      </p>
+    <section class="section" id="faq">
+      <div class="narrow">
+        <span class="eyebrow">FAQ</span>
+        <h2>Häufige Fragen</h2>
+        <div class="accordion faq">
+        <details>
+          <summary>Wie kann ich meinen Termin ändern oder absagen?</summary>
+          <div class="panel"><p>In Ihrer Bestätigungs-E-Mail finden Sie einen Link, mit dem Sie den Termin bis 24 Stunden vorher selbst verschieben oder stornieren können. Danach rufen Sie uns bitte an: +43 316 000 000.</p></div>
+        </details>
+        <details>
+          <summary>Bekomme ich eine Erinnerung?</summary>
+          <div class="panel"><p>Ja. Am Abend vor Ihrem Termin schicken wir Ihnen eine kurze Erinnerung per E-Mail.</p></div>
+        </details>
+        <details>
+          <summary>Wie kann ich bezahlen?</summary>
+          <div class="panel"><p>Bar oder mit Karte (Bankomat, Kreditkarte).</p></div>
+        </details>
+        <details>
+          <summary>Wie weit im Voraus sollte ich buchen?</summary>
+          <div class="panel"><p>Für Schnitte reichen meist ein paar Tage. Für Farbe, Strähnen und Hochsteckfrisuren am Samstag buchen Sie am besten ein bis zwei Wochen vorher.</p></div>
+        </details>
+        <details>
+          <summary>Wo kann ich parken?</summary>
+          <div class="panel"><p>In der Umgebung gibt es Kurzparkzonen und eine Tiefgarage in wenigen Gehminuten. Mit der Straßenbahn sind Sie in fünf Minuten vom Jakominiplatz bei uns.</p></div>
+        </details>
+        <details>
+          <summary>Kann ich mit Kindern kommen?</summary>
+          <div class="panel"><p>Sehr gerne. Kinderschnitte bis 12 Jahre buchen Sie einfach online, wir nehmen uns dafür extra Zeit.</p></div>
+        </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt" id="kontakt">
+      <div class="container contact">
+        <div>
+          <span class="eyebrow">Kontakt</span>
+          <h2>So finden Sie uns</h2>
+          <address>
+            <p>Haarwerk Huber<br>Musterstraße 12<br>8010 Graz</p>
+            <p style="margin-top:1rem">
+              Telefon: <a href="tel:+43316000000">+43 316 000 000</a><br>
+              E-Mail: <a href="mailto:termin@haarwerk-huber.at">termin@haarwerk-huber.at</a>
+            </p>
+          </address>
+          <p style="margin-top:1.5rem">
+            <a class="button secondary" href="https://www.google.com/maps/search/?api=1&amp;query=Musterstra%C3%9Fe+12+8010+Graz" target="_blank" rel="noopener">Route planen ↗</a>
+          </p>
+        </div>
+        <div id="oeffnungszeiten">
+          <h3>Öffnungszeiten</h3>
+          <table>
+            <tr><td>Montag</td><td>geschlossen</td></tr>
+            <tr><td>Dienstag – Freitag</td><td>9:00 – 18:00</td></tr>
+            <tr><td>Samstag</td><td>8:00 – 13:00</td></tr>
+            <tr><td>Sonntag</td><td>geschlossen</td></tr>
+          </table>
+        </div>
+      </div>
     </section>
 
   </main>
 
-  <footer>
-    © 2026 Haarwerk Huber · <a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a>
+  <footer class="site-footer">
+    <a class="logo" href="#top">Haarwerk <span>Huber</span></a>
+    <p>Musterstraße 12 · 8010 Graz · +43 316 000 000</p>
+    <p style="margin-top:0.75rem">© 2026 Haarwerk Huber · <a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a></p>
+    <p style="margin-top:0.75rem;opacity:0.7">Übungsprojekt – dieser Friseursalon ist erfunden.</p>
   </footer>
 
   <script src="shared.js"></script>
+  <script>
+    // ── Menü (☰) auf dem Handy auf- und zuklappen ──
+    const menuButton = document.querySelector('.menu-toggle');
+    const nav = document.getElementById('site-nav');
+    function setMenu(open) {
+      nav.classList.toggle('open', open);
+      menuButton.setAttribute('aria-expanded', String(open));
+      menuButton.setAttribute('aria-label', open ? 'Menü schließen' : 'Menü öffnen');
+      menuButton.textContent = open ? '✕' : '☰';
+    }
+    menuButton.addEventListener('click', () => setMenu(!nav.classList.contains('open')));
+    nav.addEventListener('click', (e) => { if (e.target.closest('a')) setMenu(false); }); // Link gewählt → zu
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMenu(false); });
+  </script>
   <script>
     const form = document.getElementById('booking-form');
     const status = document.getElementById('form-status');
@@ -158,6 +379,16 @@
       } finally {
         button.disabled = false;
       }
+    });
+  </script>
+  <script>
+    // ── "Termin buchen →" in der Preisliste: Leistung im Formular schon auswählen ──
+    document.querySelectorAll('[data-service]').forEach((link) => {
+      link.addEventListener('click', () => {
+        const select = document.getElementById('booking-form').elements.service;
+        select.value = link.dataset.service;
+        select.dispatchEvent(new Event('change')); // lädt die freien Zeiten für diese Leistung
+      });
     });
   </script>
 
