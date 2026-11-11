@@ -1,0 +1,6 @@
+# Suchmaschinen dürfen alles LESEN – nur so sehen sie das "noindex" in den Seiten.
+# (Würden wir hier sperren, könnte Google das noindex nie lesen und die Adresse trotzdem listen.)
+User-agent: *
+Allow: /
+
+Sitemap: https://haarwerk-huber.vercel.app/sitemap.xml

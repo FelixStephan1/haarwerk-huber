@@ -246,6 +246,7 @@ form button:disabled { opacity: 0.6; cursor: wait; }
 .site-footer { background: var(--text); color: #d9cfc4; text-align: center; font-size: 0.9rem; padding: 2.5rem 1.25rem; }
 .site-footer a { color: inherit; }
 .site-footer .logo { color: #fff; display: inline-block; margin-bottom: 0.5rem; }
+.site-footer .logo span { color: #d4a585; } /* hellerer Kupferton: genug Kontrast auf Dunkelbraun */
 
 /* ───────── Unterseiten (termin.html, Impressum, Datenschutz) ───────── */
 header.small-header { text-align: center; padding: 2.5rem 1.5rem 2rem; border-bottom: 1px solid var(--line); }
