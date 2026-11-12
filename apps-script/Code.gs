@@ -41,7 +41,7 @@ const TIMEZONE = 'Europe/Vienna';
 const SALON = 'Haarwerk Huber';
 const ADDRESS = 'Musterstraße 12, 8010 Graz';
 const PHONE = '+43 316 000 000';
-const SITE_URL = 'https://haarwerk-huber.vercel.app';
+const SITE_URL = 'https://haarwerk-huber.pages.dev';
 const CHANGE_DEADLINE_HOURS = 24; // ändern/stornieren nur bis so viele Stunden vorher
 const WEEKDAYS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
 

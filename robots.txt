@@ -3,4 +3,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://haarwerk-huber.vercel.app/sitemap.xml
+Sitemap: https://haarwerk-huber.pages.dev/sitemap.xml
