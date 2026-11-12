@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eigenes Buchungssystem (Demo) – Haarwerk Huber</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="favicon.ico?v=2" sizes="any">
+  <link rel="icon" href="favicon-32.png?v=2" type="image/png" sizes="32x32">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="subpage">
+
+  <div class="notice">Übungsprojekt – dieser Friseursalon ist erfunden.</div>
+
+  <header class="small-header">
+    <h1><a href="/">Haarwerk Huber</a></h1>
+    <p>Demo: selbst gebautes Buchungssystem</p>
+  </header>
+
+  <main>
+    <section>
+      <h2>Termin buchen (eigenes System)</h2>
+      <p>Diese Variante ist komplett selbst gebaut und läuft im Google-Konto des Salons: Es werden nur wirklich freie
+        Zeiten angezeigt, die Bestätigung kommt sofort per E-Mail, am Vorabend eine Erinnerung, und Kundinnen können
+        über einen Link selbst verschieben oder stornieren. Der Salon arbeitet nur im Google Kalender.</p>
+      <p class="small" style="margin-bottom:1.25rem">Di–Fr 9–18 Uhr · Sa 8–13 Uhr · Lieber telefonisch? <a href="tel:+43316000000">0316 000 000</a></p>
+      <form id="booking-form">
+        <label>Leistung
+          <select name="service" required>
+            <option value="">Bitte wählen …</option>
+            <option>Damen – Waschen, Schneiden, Föhnen</option>
+            <option>Herren – Waschen, Schneiden, Styling</option>
+            <option>Kinder bis 12 Jahre</option>
+            <option>Färben (Ansatz)</option>
+            <option>Strähnen</option>
+            <option>Bart trimmen</option>
+            <option>Hochsteckfrisur</option>
+          </select>
+        </label>
+        <div class="row">
+          <label>Datum
+            <input type="date" name="date" required>
+          </label>
+          <label>Uhrzeit
+            <select name="time" required><option value="">Bitte wählen …</option></select>
+          </label>
+        </div>
+        <div class="row">
+          <label>Name
+            <input type="text" name="name" autocomplete="name" required>
+          </label>
+          <label>Telefon
+            <input type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="+43 660 1234567" required>
+          </label>
+        </div>
+        <label>E-Mail
+          <input type="email" name="email" autocomplete="email" required>
+        </label>
+        <label>Nachricht (optional)
+          <textarea name="message" placeholder="z. B. Wünsche zur Frisur"></textarea>
+        </label>
+        <label class="hp" aria-hidden="true">Website
+          <input type="text" name="website" tabindex="-1" autocomplete="off">
+        </label>
+        <button type="submit" class="button">Termin buchen</button>
+        <p id="form-status" role="status"></p>
+      </form>
+      <p class="small">Ihre Angaben verwenden wir nur für die Terminvergabe – mehr dazu in der <a href="datenschutz.html">Datenschutzerklärung</a>.</p>
+    </section>
+  </main>
+
+  <footer>
+    © 2026 Haarwerk Huber · <a href="/">Startseite</a> · <a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a>
+  </footer>
+
+  <script src="shared.js"></script>
+  <script>
+    const form = document.getElementById('booking-form');
+    const status = document.getElementById('form-status');
+    const dateInput = form.elements.date;
+    const timeSelect = form.elements.time;
+    const serviceSelect = form.elements.service;
+    const phoneInput = form.elements.phone;
+
+    dateInput.min = todayISO();
+
+    // Freie Uhrzeiten neu laden, wenn Datum oder Leistung (= Dauer) sich ändert
+    function updateTimes() {
+      if (!serviceSelect.value) {
+        timeSelect.innerHTML = '';
+        timeSelect.add(new Option('Bitte zuerst Leistung wählen', ''));
+        return;
+      }
+      loadFreeTimes(timeSelect, dateInput.value, { service: serviceSelect.value }, SERVICES[serviceSelect.value]);
+    }
+    updateTimes();
+    dateInput.addEventListener('change', updateTimes);
+    serviceSelect.addEventListener('change', updateTimes);
+
+    phoneInput.addEventListener('input', () => phoneInput.setCustomValidity(''));
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      phoneInput.value = phoneInput.value.trim();
+      if (!isValidPhone(phoneInput.value)) {
+        phoneInput.setCustomValidity('Bitte eine gültige Telefonnummer eingeben, z. B. +43 660 1234567');
+        phoneInput.reportValidity();
+        return;
+      }
+      const button = form.querySelector('button');
+      button.disabled = true;
+      showStatus(status, '', 'Wird gesendet …');
+      try {
+        const data = await callBooking('POST', new FormData(form));
+        showStatus(status, data.ok ? 'ok' : 'error', data.message);
+        if (data.ok) form.reset();
+        updateTimes(); // nach Erfolg zurücksetzen, nach "nicht frei" die aktuellen Zeiten zeigen
+      } catch (err) {
+        showStatus(status, 'error', 'Die Buchung konnte nicht gesendet werden. Bitte rufen Sie uns an: ' + PHONE);
+      } finally {
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

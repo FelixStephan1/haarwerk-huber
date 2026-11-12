@@ -280,50 +280,15 @@
           <div class="booking-intro">
             <span class="eyebrow">Online-Termin</span>
             <h2>Termin buchen</h2>
-            <p class="lead">Sie sehen nur Zeiten, die wirklich frei sind. Die Bestätigung kommt sofort per E-Mail, am Vorabend eine Erinnerung.</p>
+            <p class="lead">Sie sehen nur Zeiten, die wirklich frei sind. Die Bestätigung kommt sofort per E-Mail.</p>
             <p class="small">Di–Fr 9–18 Uhr · Sa 8–13 Uhr<br>Lieber telefonisch? <a href="tel:+43316000000">0316 000 000</a></p>
           </div>
-      <form id="booking-form">
-        <label>Leistung
-          <select name="service" required>
-            <option value="">Bitte wählen …</option>
-            <option>Damen – Waschen, Schneiden, Föhnen</option>
-            <option>Herren – Waschen, Schneiden, Styling</option>
-            <option>Kinder bis 12 Jahre</option>
-            <option>Färben (Ansatz)</option>
-            <option>Strähnen</option>
-            <option>Bart trimmen</option>
-            <option>Hochsteckfrisur</option>
-          </select>
-        </label>
-        <div class="row">
-          <label>Datum
-            <input type="date" name="date" required>
-          </label>
-          <label>Uhrzeit
-            <select name="time" required><option value="">Bitte wählen …</option></select>
-          </label>
-        </div>
-        <div class="row">
-          <label>Name
-            <input type="text" name="name" autocomplete="name" required>
-          </label>
-          <label>Telefon
-            <input type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="+43 660 1234567" required>
-          </label>
-        </div>
-        <label>E-Mail
-          <input type="email" name="email" autocomplete="email" required>
-        </label>
-        <label>Nachricht (optional)
-          <textarea name="message" placeholder="z. B. Wünsche zur Frisur"></textarea>
-        </label>
-        <label class="hp" aria-hidden="true">Website
-          <input type="text" name="website" tabindex="-1" autocomplete="off">
-        </label>
-        <button type="submit" class="button">Termin buchen</button>
-        <p id="form-status" role="status"></p>
-      </form>
+      <div class="timify-box" id="timify-box">
+        <p>Wählen Sie Leistung und Wunschzeit – Sie sehen sofort alle freien Termine.</p>
+        <button type="button" class="button" id="timify-open">Freie Termine anzeigen</button>
+        <p class="small">Beim Klick wird das Buchungssystem unseres Partners <strong>TIMIFY</strong> (TerminApp GmbH, München) geladen.
+          Mehr dazu in der <a href="datenschutz.html#timify">Datenschutzerklärung</a>.</p>
+      </div>
         </div>
         <p class="small">Geöffnet Di–Fr 9–18 Uhr, Sa 8–13 Uhr. Ihre Angaben verwenden wir nur für die Terminvergabe – mehr dazu in der <a href="datenschutz.html">Datenschutzerklärung</a>.</p>
       </div>
@@ -336,11 +301,7 @@
         <div class="accordion faq" data-reveal>
         <details>
           <summary>Wie kann ich meinen Termin ändern oder absagen?</summary>
-          <div class="panel"><p>In Ihrer Bestätigungs-E-Mail finden Sie einen Link, mit dem Sie den Termin bis 24 Stunden vorher selbst verschieben oder stornieren können. Danach rufen Sie uns bitte an: +43 316 000 000.</p></div>
-        </details>
-        <details>
-          <summary>Bekomme ich eine Erinnerung?</summary>
-          <div class="panel"><p>Ja. Am Abend vor Ihrem Termin schicken wir Ihnen eine kurze Erinnerung per E-Mail.</p></div>
+          <div class="panel"><p>Rufen Sie uns einfach an: +43 316 000 000. Bitte sagen Sie spätestens 24 Stunden vorher ab, damit jemand anderer den Termin bekommt.</p></div>
         </details>
         <details>
           <summary>Wie kann ich bezahlen?</summary>
@@ -396,7 +357,7 @@
     <a class="logo" href="#top">Haarwerk <span>Huber</span></a>
     <p>Musterstraße 12 · 8010 Graz · +43 316 000 000</p>
     <p style="margin-top:0.75rem">© 2026 Haarwerk Huber · <a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a></p>
-    <p style="margin-top:0.75rem;opacity:0.7">Übungsprojekt – dieser Friseursalon ist erfunden.</p>
+    <p style="margin-top:0.75rem;opacity:0.7">Übungsprojekt – dieser Friseursalon ist erfunden. · <a href="eigenes-system.html">Demo: eigenes Buchungssystem</a></p>
   </footer>
 
   <script src="shared.js"></script>
@@ -432,63 +393,24 @@
     }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
     document.querySelectorAll('[data-reveal]').forEach((el) => revealObserver.observe(el));
   </script>
+  
   <script>
-    const form = document.getElementById('booking-form');
-    const status = document.getElementById('form-status');
-    const dateInput = form.elements.date;
-    const timeSelect = form.elements.time;
-    const serviceSelect = form.elements.service;
-    const phoneInput = form.elements.phone;
-
-    dateInput.min = todayISO();
-
-    // Freie Uhrzeiten neu laden, wenn Datum oder Leistung (= Dauer) sich ändert
-    function updateTimes() {
-      if (!serviceSelect.value) {
-        timeSelect.innerHTML = '';
-        timeSelect.add(new Option('Bitte zuerst Leistung wählen', ''));
-        return;
-      }
-      loadFreeTimes(timeSelect, dateInput.value, { service: serviceSelect.value }, SERVICES[serviceSelect.value]);
+    // ── Online-Buchung über TIMIFY ──
+    // Das Widget wird erst beim Klick geladen: vorher geht keine Anfrage an TIMIFY (Datenschutz, Ladezeit).
+    const TIMIFY_URL = 'https://book.timify.com/services?accountId=6af6123b470403a6b71328b6&hideCloseButton=true&locale=de-de';
+    function openTimify() {
+      const box = document.getElementById('timify-box');
+      if (box.querySelector('iframe')) return;
+      const frame = document.createElement('iframe');
+      frame.src = TIMIFY_URL;
+      frame.title = 'Online-Terminbuchung';
+      frame.className = 'timify-frame';
+      box.innerHTML = '';
+      box.appendChild(frame);
     }
-    updateTimes();
-    dateInput.addEventListener('change', updateTimes);
-    serviceSelect.addEventListener('change', updateTimes);
-
-    phoneInput.addEventListener('input', () => phoneInput.setCustomValidity(''));
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      phoneInput.value = phoneInput.value.trim();
-      if (!isValidPhone(phoneInput.value)) {
-        phoneInput.setCustomValidity('Bitte eine gültige Telefonnummer eingeben, z. B. +43 660 1234567');
-        phoneInput.reportValidity();
-        return;
-      }
-      const button = form.querySelector('button');
-      button.disabled = true;
-      showStatus(status, '', 'Wird gesendet …');
-      try {
-        const data = await callBooking('POST', new FormData(form));
-        showStatus(status, data.ok ? 'ok' : 'error', data.message);
-        if (data.ok) form.reset();
-        updateTimes(); // nach Erfolg zurücksetzen, nach "nicht frei" die aktuellen Zeiten zeigen
-      } catch (err) {
-        showStatus(status, 'error', 'Die Buchung konnte nicht gesendet werden. Bitte rufen Sie uns an: ' + PHONE);
-      } finally {
-        button.disabled = false;
-      }
-    });
-  </script>
-  <script>
-    // ── "Termin buchen →" in der Preisliste: Leistung im Formular schon auswählen ──
-    document.querySelectorAll('[data-service]').forEach((link) => {
-      link.addEventListener('click', () => {
-        const select = document.getElementById('booking-form').elements.service;
-        select.value = link.dataset.service;
-        select.dispatchEvent(new Event('change')); // lädt die freien Zeiten für diese Leistung
-      });
-    });
+    document.getElementById('timify-open').addEventListener('click', openTimify);
+    // "Termin buchen" in Preisliste, Menü und Hero: zum Buchungsbereich springen und Widget gleich öffnen
+    document.querySelectorAll('a[href="#termin"]').forEach((link) => link.addEventListener('click', openTimify));
   </script>
 
 </body>
